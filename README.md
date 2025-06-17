@@ -1,20 +1,28 @@
 ## Prepare system
 
  1.Install VSCode.
+ 
  2.Install ESP-IDF Extension - Develop and debug applications for Espressif chips with ESP-IDF.
+ 
  3.Install ESP-IDF v5.4.1 (via ESP-IDF Extension).
+ 
  4.Open ENSENS_METEO project:
+ 
  - from "root" directory - write "code ." from CLI;
  - from "VSCode" - select "Open Folder..." from Menu.
+ - 
  5.Configure VSCode "settings.json" (if you need).
 
 ## Build and Flash ENSENS_METEO project
  1.Сonnect your panel with a type-C cable to the PC port.
+ 
  2.Into VSCode:
+ 
  - select current ESP-IDF v5.4.1 version;
  - select ESP-IDF Flash Method - UART;
  - select Port to Use - your active COM port;
  - select Espressif Device Target- esp32s3.
+ - 
  3.Into VSCode:
  - click "Build, Flash and Monitor".
 
