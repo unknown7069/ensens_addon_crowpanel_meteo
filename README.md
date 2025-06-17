@@ -10,7 +10,7 @@
  
  - from "root" directory - write "code ." from CLI;
  - from "VSCode" - select "Open Folder..." from Menu.
- - 
+   
  5.Configure VSCode "settings.json" (if you need).
 
 ## Build and Flash ENSENS_METEO project
@@ -22,7 +22,7 @@
  - select ESP-IDF Flash Method - UART;
  - select Port to Use - your active COM port;
  - select Espressif Device Target- esp32s3.
- - 
+   
  3.Into VSCode:
  - click "Build, Flash and Monitor".
 
