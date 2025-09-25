@@ -1,0 +1,4 @@
+build/
+.vscode/
+managed_components/
+grc_ensens_release_1.5
