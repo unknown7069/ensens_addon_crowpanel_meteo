@@ -212,6 +212,16 @@ tabview_t* tabview_create(lv_obj_t* parent, int32_t tab_h)
     lv_obj_set_style_pad_top(tview->tab_2, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(tview->tab_2, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    tview->tab_3 = lv_tabview_add_tab(tview->cont, "Test");
+    lv_obj_set_style_pad_top(tview->tab_3, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(tview->tab_3, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    tview->label = lv_label_create(tview->tab_3);
+    lv_label_set_text(tview->label, "--:--");
+    lv_obj_set_style_text_font(tview->label, &Montserrat_96, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_add_flag(tview->label, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_align(tview->label, LV_ALIGN_TOP_LEFT, 0, 0);
+
     tview->tab_bar = lv_tabview_get_tab_btns(tview->cont);
 
     lv_obj_set_style_pad_right(tview->tab_bar, LV_HOR_RES / 2, 0);

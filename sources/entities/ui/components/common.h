@@ -17,6 +17,7 @@
 // Need to take into account one digit after the decimal point
 #define MULT_COEFF (uint16_t)10
 LV_IMG_DECLARE(humidity_icon);
+LV_FONT_DECLARE(Montserrat_96);
 
 typedef struct {
     lv_obj_t* cont;
