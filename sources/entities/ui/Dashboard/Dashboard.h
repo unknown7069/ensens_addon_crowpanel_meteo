@@ -658,18 +658,32 @@ public:
         lv_label_set_text(days_header_->current_day[getDayOfWeek(timestamp)], CUR_DAY_SYMBOL);
 
         lv_label_set_text(days_header_->zodizk_sign, getZodiacSign(timestamp).c_str());
-        if (tv_ && tv_->label)
+        if (tv_)
         {
             if (timestamp != 0)
             {
-                char     time_text[6] = { 0 };
                 time_t   timestampStruct = timestamp;
                 struct tm* timeInfo      = localtime(&timestampStruct);
-                strftime(time_text, sizeof(time_text), "%H:%M", timeInfo);
-                lv_label_set_text(tv_->label, time_text);
+
+                if (tv_->label)
+                {
+                    char time_text[6] = { 0 };
+                    strftime(time_text, sizeof(time_text), "%H:%M", timeInfo);
+                    lv_label_set_text(tv_->label, time_text);
+                }
+
+                if (tv_->date_label)
+                {
+                    char date_text[24] = { 0 };
+                    strftime(date_text, sizeof(date_text), "%d %b %Y, %a", timeInfo);
+                    lv_label_set_text(tv_->date_label, date_text);
+                }
             } else
             {
-                lv_label_set_text(tv_->label, "");
+                if (tv_->label)
+                    lv_label_set_text(tv_->label, "");
+                if (tv_->date_label)
+                    lv_label_set_text(tv_->date_label, "");
             }
         }
 

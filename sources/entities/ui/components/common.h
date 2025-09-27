@@ -79,6 +79,7 @@ typedef struct {
     lv_obj_t* tab_3;
     lv_obj_t* tab_bar;
     lv_obj_t* label;
+    lv_obj_t* date_label;
     int32_t   tab_h;
 } tabview_t;
 
