@@ -22,6 +22,8 @@
 
 #include <iterator>
 #include <sstream>
+#include <initializer_list>
+#include <utility>
 
 #define TENDENCY_VALUES_NUM 5
 #define TENDENCY_VALUES_MAX_ANGLE 90
@@ -650,6 +652,8 @@ public:
         lv_meter_set_indicator_value(co2_box_->gauge->meter, co2_box_->gauge->needle, value);
         if (tv_ && tv_->co2_label)
         {
+            auto color = get_quality_color(value, { { 800, LV_PALETTE_GREEN }, { 1200, LV_PALETTE_YELLOW }, { 1600, LV_PALETTE_ORANGE } });
+            lv_obj_set_style_text_color(tv_->co2_label, color, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text_fmt(tv_->co2_label, "CO2 %u ppm", value);
         }
         unlock();
@@ -685,6 +689,8 @@ public:
         lv_meter_set_indicator_value(voc_box_->gauge->meter, voc_box_->gauge->needle, value);
         if (tv_ && tv_->voc_label)
         {
+            auto color = get_quality_color(value, { { 200, LV_PALETTE_GREEN }, { 400, LV_PALETTE_YELLOW }, { 1000, LV_PALETTE_ORANGE } });
+            lv_obj_set_style_text_color(tv_->voc_label, color, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text_fmt(tv_->voc_label, "VOC %u ppb", value);
         }
         unlock();
@@ -720,6 +726,8 @@ public:
         lv_meter_set_indicator_value(iaq_box_->gauge->meter, iaq_box_->gauge->needle, value);
         if (tv_ && tv_->iaq_label)
         {
+            auto color = get_quality_color(value, { { 50, LV_PALETTE_GREEN }, { 100, LV_PALETTE_YELLOW }, { 150, LV_PALETTE_ORANGE } });
+            lv_obj_set_style_text_color(tv_->iaq_label, color, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_label_set_text_fmt(tv_->iaq_label, "IAQ %u", value);
         }
         unlock();
@@ -815,6 +823,16 @@ public:
 
         lv_chart_set_range(pressure_box_->plot.chart, LV_CHART_AXIS_SECONDARY_Y,
                            (lv_coord_t)scale_min * MULT_COEFF, (lv_coord_t)scale_max * MULT_COEFF);
+    }
+
+    static lv_color_t get_quality_color(uint16_t value, std::initializer_list<std::pair<uint16_t, lv_palette_t>> ranges)
+    {
+        for (const auto& entry : ranges)
+        {
+            if (value <= entry.first)
+                return lv_palette_main(entry.second);
+        }
+        return lv_palette_main(LV_PALETTE_RED);
     }
 
     static std::string getZodiacSign(uint32_t timestamp);
