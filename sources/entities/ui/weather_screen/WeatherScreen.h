@@ -92,6 +92,9 @@ public:
     void setCurrentWeather(Weather::Data& data)
     {
         ui->currentWeatherBody.setTemperature(data.temperature);
+        Dashboard::instance().updateOutsideTemperature(data.temperature);
+        Dashboard::instance().updateOutsideHumidity(data.humidity);
+        Dashboard::instance().updateOutsidePressure(data.pressure);
         ui->currentWeatherBody.setDescription(data.description);
         ui->currentWeatherBody.setFeelsLikeTemp(data.feelsLike);
         ui->currentWeatherBody.setIcon(data.icon);

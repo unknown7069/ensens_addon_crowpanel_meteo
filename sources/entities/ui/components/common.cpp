@@ -197,20 +197,96 @@ static void tabview_init_test_tab(tabview_t* tview)
     lv_obj_set_style_pad_top(tview->tab_3, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(tview->tab_3, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
 
+    // Time
     tview->label = lv_label_create(tview->tab_3);
     lv_label_set_text(tview->label, "--:--");
     lv_obj_set_style_text_font(tview->label, &Montserrat_96, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_add_flag(tview->label, LV_OBJ_FLAG_IGNORE_LAYOUT);
     lv_obj_align(tview->label, LV_ALIGN_TOP_LEFT, 0, 0);
 
+    // Date
     tview->date_label = lv_label_create(tview->tab_3);
     lv_label_set_text(tview->date_label, "--");
     lv_obj_set_style_text_font(tview->date_label, &lv_font_montserrat_32,
                                LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_add_flag(tview->date_label, LV_OBJ_FLAG_IGNORE_LAYOUT);
     lv_obj_align(tview->date_label, LV_ALIGN_TOP_LEFT, 0, 110);
-}
 
+    auto create_row = [](lv_obj_t* parent, lv_coord_t x_ofs, lv_coord_t y_ofs) {
+        lv_obj_t* row = lv_obj_create(parent);
+        lv_obj_set_size(row, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+        lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
+        lv_obj_set_style_bg_opa(row, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_border_opa(row, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_all(row, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_row(row, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_style_pad_column(row, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_add_flag(row, LV_OBJ_FLAG_IGNORE_LAYOUT);
+        lv_obj_set_layout(row, LV_LAYOUT_FLEX);
+        lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
+        lv_obj_set_flex_align(row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+        lv_obj_align(row, LV_ALIGN_TOP_RIGHT, x_ofs, y_ofs);
+        return row;
+    };
+
+    // Temperature row (indoor/outdoor)
+    tview->temp_row = create_row(tview->tab_3, -20, 0);
+    tview->temp_inside_label = lv_label_create(tview->temp_row);
+    lv_label_set_text(tview->temp_inside_label, "In --");
+    lv_obj_set_style_text_font(tview->temp_inside_label, &lv_font_montserrat_32,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    tview->temp_outside_label = lv_label_create(tview->temp_row);
+    lv_label_set_text(tview->temp_outside_label, "Out --");
+    lv_obj_set_style_text_font(tview->temp_outside_label, &lv_font_montserrat_32,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // Humidity row (indoor/outdoor)
+    tview->humidity_row = create_row(tview->tab_3, -20, 60);
+    tview->humidity_inside_label = lv_label_create(tview->humidity_row);
+    lv_label_set_text(tview->humidity_inside_label, "In --%");
+    lv_obj_set_style_text_font(tview->humidity_inside_label, &lv_font_montserrat_28,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    tview->humidity_outside_label = lv_label_create(tview->humidity_row);
+    lv_label_set_text(tview->humidity_outside_label, "Out --%");
+    lv_obj_set_style_text_font(tview->humidity_outside_label, &lv_font_montserrat_28,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // Pressure row (indoor/outdoor)
+    tview->pressure_row = create_row(tview->tab_3, -20, 110);
+    tview->pressure_inside_label = lv_label_create(tview->pressure_row);
+    lv_label_set_text(tview->pressure_inside_label, "In --");
+    lv_obj_set_style_text_font(tview->pressure_inside_label, &lv_font_montserrat_28,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    tview->pressure_outside_label = lv_label_create(tview->pressure_row);
+    lv_label_set_text(tview->pressure_outside_label, "Out --");
+    lv_obj_set_style_text_font(tview->pressure_outside_label, &lv_font_montserrat_28,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // VOC row (indoor only)
+    tview->voc_row = create_row(tview->tab_3, -20, 160);
+    tview->voc_label = lv_label_create(tview->voc_row);
+    lv_label_set_text(tview->voc_label, "VOC --");
+    lv_obj_set_style_text_font(tview->voc_label, &lv_font_montserrat_24,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // CO2 row (indoor only)
+    tview->co2_row = create_row(tview->tab_3, -20, 200);
+    tview->co2_label = lv_label_create(tview->co2_row);
+    lv_label_set_text(tview->co2_label, "CO2 --");
+    lv_obj_set_style_text_font(tview->co2_label, &lv_font_montserrat_24,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    // IAQ row (indoor only)
+    tview->iaq_row = create_row(tview->tab_3, -20, 240);
+    tview->iaq_label = lv_label_create(tview->iaq_row);
+    lv_label_set_text(tview->iaq_label, "IAQ --");
+    lv_obj_set_style_text_font(tview->iaq_label, &lv_font_montserrat_24,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+    
+}
 
 tabview_t* tabview_create(lv_obj_t* parent, int32_t tab_h)
 {

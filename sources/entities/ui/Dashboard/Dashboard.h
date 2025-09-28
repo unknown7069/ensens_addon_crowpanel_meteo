@@ -10,6 +10,7 @@
 #include "Aggregator.h"
 #include "entities/EnvironmentalSensorData.h"
 #include "entities/ui/components/common.h"
+#include "entities/Units.h"
 #include "entities/ui/components/pressure_box.h"
 #include "entities/ui/sensors_settings/SensorSettings.h"
 
@@ -390,6 +391,17 @@ public:
         }
 
         lv_label_set_text_fmt(temp_box_->value->int_part, "%s", integer_part);
+        if (tv_ && tv_->temp_inside_label)
+        {
+            if (std::isnan(value))
+            {
+                lv_label_set_text(tv_->temp_inside_label, "In --");
+            } else
+            {
+                const char* unit = unit_names.at(sensor_settings_->temperature);
+                lv_label_set_text_fmt(tv_->temp_inside_label, "In %+.1f%s", value, unit);
+            }
+        }
         unlock();
     }
     void updateTemperatureTendency(uint8_t value, int8_t dir)
@@ -407,6 +419,59 @@ public:
             }
             ESP_LOGD(TAG, "temp tend value=%u, angle=%u", value, angle);
             lv_meter_set_indicator_value(temp_box_->tend->meter, temp_box_->tend->needle, angle);
+        }
+        unlock();
+    }
+
+    void updateOutsideTemperature(float value)
+    {
+        lock();
+        if (tv_ && tv_->temp_outside_label)
+        {
+            if (std::isnan(value))
+            {
+                lv_label_set_text(tv_->temp_outside_label, "Out --");
+            } else
+            {
+                float converted = convertValueToUnit(sensor_settings_->temperature, value);
+                const char* unit = unit_names.at(sensor_settings_->temperature);
+                lv_label_set_text_fmt(tv_->temp_outside_label, "Out %+.1f%s", converted, unit);
+            }
+        }
+        unlock();
+    }
+
+    void updateOutsidePressure(float value)
+    {
+        lock();
+        if (tv_ && tv_->pressure_outside_label)
+        {
+            if (std::isnan(value))
+            {
+                lv_label_set_text(tv_->pressure_outside_label, "Out --");
+            } else
+            {
+                float converted = convertValueToDefault(UnitType::hPa, value);
+                converted = convertValueToUnit(sensor_settings_->pressure, converted);
+                const char* unit = unit_names.at(sensor_settings_->pressure);
+                lv_label_set_text_fmt(tv_->pressure_outside_label, "Out %.0f%s", converted, unit);
+            }
+        }
+        unlock();
+    }
+
+    void updateOutsideHumidity(float value)
+    {
+        lock();
+        if (tv_ && tv_->humidity_outside_label)
+        {
+            if (std::isnan(value))
+            {
+                lv_label_set_text(tv_->humidity_outside_label, "Out --%");
+            } else
+            {
+                lv_label_set_text_fmt(tv_->humidity_outside_label, "Out %.0f%%", value);
+            }
         }
         unlock();
     }
@@ -430,6 +495,16 @@ public:
         }
 
         lv_label_set_text_fmt(humi_dew_point_box_->value_humi->int_part, "%s", integer_part);
+        if (tv_ && tv_->humidity_inside_label)
+        {
+            if (std::isnan(value))
+            {
+                lv_label_set_text(tv_->humidity_inside_label, "In --%");
+            } else
+            {
+                lv_label_set_text_fmt(tv_->humidity_inside_label, "In %.0f%%", value);
+            }
+        }
         unlock();
     }
     void updateHumidityTendency(uint8_t value, int8_t dir)
@@ -512,6 +587,17 @@ public:
         }
 
         lv_label_set_text_fmt(pressure_box_->value->int_part, "%s", integer_part);
+        if (tv_ && tv_->pressure_inside_label)
+        {
+            if (std::isnan(value))
+            {
+                lv_label_set_text(tv_->pressure_inside_label, "In --");
+            } else
+            {
+                const char* unit = unit_names.at(sensor_settings_->pressure);
+                lv_label_set_text_fmt(tv_->pressure_inside_label, "In %.0f%s", value, unit);
+            }
+        }
         lv_meter_set_indicator_value(pressure_box_->gauge->meter, pressure_box_->gauge->needle,
                                      value);
         unlock();
@@ -562,6 +648,10 @@ public:
 
         lv_label_set_text_fmt(co2_box_->value->int_part, "%d", value);
         lv_meter_set_indicator_value(co2_box_->gauge->meter, co2_box_->gauge->needle, value);
+        if (tv_ && tv_->co2_label)
+        {
+            lv_label_set_text_fmt(tv_->co2_label, "CO2 %u ppm", value);
+        }
         unlock();
     }
     void updateCO2Tendency(uint8_t value, int8_t dir)
@@ -593,6 +683,10 @@ public:
 
         lv_label_set_text_fmt(voc_box_->value->int_part, "%d", value);
         lv_meter_set_indicator_value(voc_box_->gauge->meter, voc_box_->gauge->needle, value);
+        if (tv_ && tv_->voc_label)
+        {
+            lv_label_set_text_fmt(tv_->voc_label, "VOC %u ppb", value);
+        }
         unlock();
     }
     void updateVOCTendency(uint8_t value, int8_t dir)
@@ -624,6 +718,10 @@ public:
 
         lv_label_set_text_fmt(iaq_box_->value->int_part, "%d", value);
         lv_meter_set_indicator_value(iaq_box_->gauge->meter, iaq_box_->gauge->needle, value);
+        if (tv_ && tv_->iaq_label)
+        {
+            lv_label_set_text_fmt(tv_->iaq_label, "IAQ %u", value);
+        }
         unlock();
     }
     void updateIAQTendency(uint8_t value, int8_t dir)
@@ -820,3 +918,5 @@ public:
         updateSettings(old_dev_name);
     }
 };
+
+
