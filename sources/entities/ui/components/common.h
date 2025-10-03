@@ -17,6 +17,10 @@
 // Need to take into account one digit after the decimal point
 #define MULT_COEFF (uint16_t)10
 LV_IMG_DECLARE(humidity_icon);
+LV_IMG_DECLARE(pressure_icon);
+LV_IMG_DECLARE(temperature);
+LV_IMG_DECLARE(co2);
+LV_IMG_DECLARE(aqi);
 LV_FONT_DECLARE(Montserrat_96);
 
 typedef struct {
@@ -118,3 +122,7 @@ lv_obj_t* draw_filled_half_circle(lv_obj_t* parent, lv_coord_t radius, lv_color_
 lv_obj_t* draw_circle(lv_obj_t* parent, lv_coord_t radius);
 
 #endif
+
+
+
+

@@ -231,6 +231,10 @@ static void tabview_init_test_tab(tabview_t* tview)
 
     // Temperature row (indoor/outdoor)
     tview->temp_row = create_row(tview->tab_3, -20, 0);
+
+    lv_obj_t* temperature_icon_obj = lv_img_create(tview->temp_row);
+    lv_img_set_src(temperature_icon_obj, &temperature);
+
     tview->temp_inside_label = lv_label_create(tview->temp_row);
     lv_label_set_text(tview->temp_inside_label, "In --");
     lv_obj_set_style_text_font(tview->temp_inside_label, &lv_font_montserrat_32,
@@ -243,6 +247,10 @@ static void tabview_init_test_tab(tabview_t* tview)
 
     // Humidity row (indoor/outdoor)
     tview->humidity_row = create_row(tview->tab_3, -20, 60);
+
+    lv_obj_t* humidity_icon_obj = lv_img_create(tview->humidity_row);
+    lv_img_set_src(humidity_icon_obj, &humidity_icon);
+
     tview->humidity_inside_label = lv_label_create(tview->humidity_row);
     lv_label_set_text(tview->humidity_inside_label, "In --%");
     lv_obj_set_style_text_font(tview->humidity_inside_label, &lv_font_montserrat_28,
@@ -255,6 +263,10 @@ static void tabview_init_test_tab(tabview_t* tview)
 
     // Pressure row (indoor/outdoor)
     tview->pressure_row = create_row(tview->tab_3, -20, 110);
+
+    lv_obj_t* pressure_icon_obj = lv_img_create(tview->pressure_row);
+    lv_img_set_src(pressure_icon_obj, &pressure_icon);
+
     tview->pressure_inside_label = lv_label_create(tview->pressure_row);
     lv_label_set_text(tview->pressure_inside_label, "In --");
     lv_obj_set_style_text_font(tview->pressure_inside_label, &lv_font_montserrat_28,
@@ -274,6 +286,10 @@ static void tabview_init_test_tab(tabview_t* tview)
 
     // CO2 row (indoor only)
     tview->co2_row = create_row(tview->tab_3, -20, 200);
+
+    lv_obj_t* co2_icon_obj = lv_img_create(tview->co2_row);
+    lv_img_set_src(co2_icon_obj, &co2);
+
     tview->co2_label = lv_label_create(tview->co2_row);
     lv_label_set_text(tview->co2_label, "CO2 --");
     lv_obj_set_style_text_font(tview->co2_label, &lv_font_montserrat_24,
@@ -281,6 +297,10 @@ static void tabview_init_test_tab(tabview_t* tview)
 
     // IAQ row (indoor only)
     tview->iaq_row = create_row(tview->tab_3, -20, 240);
+
+    lv_obj_t* iaq_icon_obj = lv_img_create(tview->iaq_row);
+    lv_img_set_src(iaq_icon_obj, &aqi);
+
     tview->iaq_label = lv_label_create(tview->iaq_row);
     lv_label_set_text(tview->iaq_label, "IAQ --");
     lv_obj_set_style_text_font(tview->iaq_label, &lv_font_montserrat_24,
