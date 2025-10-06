@@ -397,11 +397,11 @@ public:
         {
             if (std::isnan(value))
             {
-                lv_label_set_text(tv_->temp_inside_label, "In --");
+                lv_label_set_text(tv_->temp_inside_label, "--");
             } else
             {
                 const char* unit = unit_names.at(sensor_settings_->temperature);
-                lv_label_set_text_fmt(tv_->temp_inside_label, "In %+.1f%s", value, unit);
+                lv_label_set_text_fmt(tv_->temp_inside_label, "%+.1f%s", value, unit);
             }
         }
         unlock();
@@ -432,12 +432,12 @@ public:
         {
             if (std::isnan(value))
             {
-                lv_label_set_text(tv_->temp_outside_label, "Out --");
+                lv_label_set_text(tv_->temp_outside_label, "--");
             } else
             {
                 float converted = convertValueToUnit(sensor_settings_->temperature, value);
                 const char* unit = unit_names.at(sensor_settings_->temperature);
-                lv_label_set_text_fmt(tv_->temp_outside_label, "Out %+.1f%s", converted, unit);
+                lv_label_set_text_fmt(tv_->temp_outside_label, "%+.1f%s", converted, unit);
             }
         }
         unlock();
@@ -450,13 +450,13 @@ public:
         {
             if (std::isnan(value))
             {
-                lv_label_set_text(tv_->pressure_outside_label, "Out --");
+                lv_label_set_text(tv_->pressure_outside_label, "--");
             } else
             {
                 float converted = convertValueToDefault(UnitType::hPa, value);
                 converted = convertValueToUnit(sensor_settings_->pressure, converted);
                 const char* unit = unit_names.at(sensor_settings_->pressure);
-                lv_label_set_text_fmt(tv_->pressure_outside_label, "Out %.0f%s", converted, unit);
+                lv_label_set_text_fmt(tv_->pressure_outside_label, "%.0f%s", converted, unit);
             }
         }
         unlock();
@@ -469,10 +469,10 @@ public:
         {
             if (std::isnan(value))
             {
-                lv_label_set_text(tv_->humidity_outside_label, "Out --%");
+                lv_label_set_text(tv_->humidity_outside_label, "--%");
             } else
             {
-                lv_label_set_text_fmt(tv_->humidity_outside_label, "Out %.0f%%", value);
+                lv_label_set_text_fmt(tv_->humidity_outside_label, "%.0f%%", value);
             }
         }
         unlock();
@@ -501,10 +501,10 @@ public:
         {
             if (std::isnan(value))
             {
-                lv_label_set_text(tv_->humidity_inside_label, "In --%");
+                lv_label_set_text(tv_->humidity_inside_label, "--%");
             } else
             {
-                lv_label_set_text_fmt(tv_->humidity_inside_label, "In %.0f%%", value);
+                lv_label_set_text_fmt(tv_->humidity_inside_label, "%.0f%%", value);
             }
         }
         unlock();
@@ -593,11 +593,11 @@ public:
         {
             if (std::isnan(value))
             {
-                lv_label_set_text(tv_->pressure_inside_label, "In --");
+                lv_label_set_text(tv_->pressure_inside_label, "--");
             } else
             {
                 const char* unit = unit_names.at(sensor_settings_->pressure);
-                lv_label_set_text_fmt(tv_->pressure_inside_label, "In %.0f%s", value, unit);
+                lv_label_set_text_fmt(tv_->pressure_inside_label, "%.0f%s", value, unit);
             }
         }
         lv_meter_set_indicator_value(pressure_box_->gauge->meter, pressure_box_->gauge->needle,
@@ -654,7 +654,7 @@ public:
         {
             auto color = get_quality_color(value, { { 800, LV_PALETTE_GREEN }, { 1200, LV_PALETTE_YELLOW }, { 1600, LV_PALETTE_ORANGE } });
             lv_obj_set_style_text_color(tv_->co2_label, color, LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_label_set_text_fmt(tv_->co2_label, "CO2 %u ppm", value);
+            lv_label_set_text_fmt(tv_->co2_label, "%u ppm", value);
         }
         unlock();
     }
@@ -691,7 +691,7 @@ public:
         {
             auto color = get_quality_color(value, { { 200, LV_PALETTE_GREEN }, { 400, LV_PALETTE_YELLOW }, { 1000, LV_PALETTE_ORANGE } });
             lv_obj_set_style_text_color(tv_->voc_label, color, LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_label_set_text_fmt(tv_->voc_label, "VOC %u ppb", value);
+            lv_label_set_text_fmt(tv_->voc_label, "%u ppb", value);
         }
         unlock();
     }
@@ -728,7 +728,7 @@ public:
         {
             auto color = get_quality_color(value, { { 50, LV_PALETTE_GREEN }, { 100, LV_PALETTE_YELLOW }, { 150, LV_PALETTE_ORANGE } });
             lv_obj_set_style_text_color(tv_->iaq_label, color, LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_label_set_text_fmt(tv_->iaq_label, "IAQ %u", value);
+            lv_label_set_text_fmt(tv_->iaq_label, "%u", value);
         }
         unlock();
     }

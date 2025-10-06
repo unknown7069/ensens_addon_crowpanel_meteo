@@ -212,99 +212,155 @@ static void tabview_init_test_tab(tabview_t* tview)
     lv_obj_add_flag(tview->date_label, LV_OBJ_FLAG_IGNORE_LAYOUT);
     lv_obj_align(tview->date_label, LV_ALIGN_TOP_LEFT, 0, 110);
 
-    auto create_row = [](lv_obj_t* parent, lv_coord_t x_ofs, lv_coord_t y_ofs) {
-        lv_obj_t* row = lv_obj_create(parent);
-        lv_obj_set_size(row, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
-        lv_obj_clear_flag(row, LV_OBJ_FLAG_SCROLLABLE);
-        lv_obj_set_style_bg_opa(row, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_border_opa(row, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_all(row, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_row(row, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_set_style_pad_column(row, 20, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_obj_add_flag(row, LV_OBJ_FLAG_IGNORE_LAYOUT);
-        lv_obj_set_layout(row, LV_LAYOUT_FLEX);
-        lv_obj_set_flex_flow(row, LV_FLEX_FLOW_ROW);
-        lv_obj_set_flex_align(row, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-        lv_obj_align(row, LV_ALIGN_TOP_RIGHT, x_ofs, y_ofs);
-        return row;
+    tview->test_table = lv_obj_create(tview->tab_3);
+    lv_obj_set_size(tview->test_table, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+    lv_obj_clear_flag(tview->test_table, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_opa(tview->test_table, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(tview->test_table, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(tview->test_table, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_row(tview->test_table, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_column(tview->test_table, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_add_flag(tview->test_table, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_set_layout(tview->test_table, LV_LAYOUT_GRID);
+    lv_obj_align(tview->test_table, LV_ALIGN_TOP_RIGHT, -20, 0);
+
+    static lv_coord_t table_col_dsc[] = {
+        LV_GRID_CONTENT, 8, LV_GRID_FR(1), 8, LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST
+    };
+    static lv_coord_t table_row_dsc[] = {
+        LV_GRID_CONTENT, 6, LV_GRID_CONTENT, 6, LV_GRID_CONTENT, 6, LV_GRID_CONTENT,
+        LV_GRID_TEMPLATE_LAST
+    };
+    lv_obj_set_grid_dsc_array(tview->test_table, table_col_dsc, table_row_dsc);
+
+    auto add_secondary_column_icon = [&](lv_coord_t row_index) {
+        lv_obj_t* icon = lv_label_create(tview->test_table);
+        lv_label_set_text(icon, LV_SYMBOL_HOME);
+        lv_obj_set_style_text_font(icon, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_grid_cell(icon, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, row_index, 1);
+    };
+
+    auto add_outdoor_column_icon = [&](lv_coord_t row_index) {
+        lv_obj_t* icon = lv_label_create(tview->test_table);
+        lv_label_set_text(icon, LV_SYMBOL_UP);
+        lv_obj_set_style_text_font(icon, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+        lv_obj_set_grid_cell(icon, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, row_index, 1);
     };
 
     // Temperature row (indoor/outdoor)
-    tview->temp_row = create_row(tview->tab_3, -20, 0);
-
-    lv_obj_t* temperature_icon_obj = lv_img_create(tview->temp_row);
+    lv_obj_t* temperature_icon_obj = lv_img_create(tview->test_table);
     lv_img_set_src(temperature_icon_obj, &temperature);
+    lv_obj_set_grid_cell(temperature_icon_obj, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0,
+                         1);
 
-    tview->temp_inside_label = lv_label_create(tview->temp_row);
-    lv_label_set_text(tview->temp_inside_label, "In --");
-    lv_obj_set_style_text_font(tview->temp_inside_label, &lv_font_montserrat_32,
-                               LV_PART_MAIN | LV_STATE_DEFAULT);
+    add_secondary_column_icon(0);
 
-    tview->temp_outside_label = lv_label_create(tview->temp_row);
-    lv_label_set_text(tview->temp_outside_label, "Out --");
-    lv_obj_set_style_text_font(tview->temp_outside_label, &lv_font_montserrat_32,
+    tview->temp_inside_label = lv_label_create(tview->test_table);
+    lv_label_set_text(tview->temp_inside_label, "--");
+    lv_obj_set_style_text_font(tview->temp_inside_label, &lv_font_montserrat_24,
                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(tview->temp_inside_label, LV_GRID_ALIGN_START, 2, 1,
+                         LV_GRID_ALIGN_CENTER, 0, 1);
+
+    add_outdoor_column_icon(0);
+
+    tview->temp_outside_label = lv_label_create(tview->test_table);
+    lv_label_set_text(tview->temp_outside_label, "--");
+    lv_obj_set_style_text_font(tview->temp_outside_label, &lv_font_montserrat_24,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(tview->temp_outside_label, LV_GRID_ALIGN_START, 4, 1,
+                         LV_GRID_ALIGN_CENTER, 0, 1);
 
     // Humidity row (indoor/outdoor)
-    tview->humidity_row = create_row(tview->tab_3, -20, 60);
-
-    lv_obj_t* humidity_icon_obj = lv_img_create(tview->humidity_row);
+    lv_obj_t* humidity_icon_obj = lv_img_create(tview->test_table);
     lv_img_set_src(humidity_icon_obj, &humidity_icon);
+    lv_obj_set_grid_cell(humidity_icon_obj, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1,
+                         1);
 
-    tview->humidity_inside_label = lv_label_create(tview->humidity_row);
-    lv_label_set_text(tview->humidity_inside_label, "In --%");
-    lv_obj_set_style_text_font(tview->humidity_inside_label, &lv_font_montserrat_28,
-                               LV_PART_MAIN | LV_STATE_DEFAULT);
+    add_secondary_column_icon(1);
 
-    tview->humidity_outside_label = lv_label_create(tview->humidity_row);
-    lv_label_set_text(tview->humidity_outside_label, "Out --%");
-    lv_obj_set_style_text_font(tview->humidity_outside_label, &lv_font_montserrat_28,
+    tview->humidity_inside_label = lv_label_create(tview->test_table);
+    lv_label_set_text(tview->humidity_inside_label, "--%");
+    lv_obj_set_style_text_font(tview->humidity_inside_label, &lv_font_montserrat_24,
                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(tview->humidity_inside_label, LV_GRID_ALIGN_START, 2, 1,
+                         LV_GRID_ALIGN_CENTER, 1, 1);
+
+    add_outdoor_column_icon(1);
+
+    tview->humidity_outside_label = lv_label_create(tview->test_table);
+    lv_label_set_text(tview->humidity_outside_label, "--%");
+    lv_obj_set_style_text_font(tview->humidity_outside_label, &lv_font_montserrat_24,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(tview->humidity_outside_label, LV_GRID_ALIGN_START, 4, 1,
+                         LV_GRID_ALIGN_CENTER, 1, 1);
 
     // Pressure row (indoor/outdoor)
-    tview->pressure_row = create_row(tview->tab_3, -20, 110);
-
-    lv_obj_t* pressure_icon_obj = lv_img_create(tview->pressure_row);
+    lv_obj_t* pressure_icon_obj = lv_img_create(tview->test_table);
     lv_img_set_src(pressure_icon_obj, &pressure_icon);
+    lv_obj_set_grid_cell(pressure_icon_obj, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2,
+                         1);
 
-    tview->pressure_inside_label = lv_label_create(tview->pressure_row);
-    lv_label_set_text(tview->pressure_inside_label, "In --");
-    lv_obj_set_style_text_font(tview->pressure_inside_label, &lv_font_montserrat_28,
-                               LV_PART_MAIN | LV_STATE_DEFAULT);
+    add_secondary_column_icon(2);
 
-    tview->pressure_outside_label = lv_label_create(tview->pressure_row);
-    lv_label_set_text(tview->pressure_outside_label, "Out --");
-    lv_obj_set_style_text_font(tview->pressure_outside_label, &lv_font_montserrat_28,
+    tview->pressure_inside_label = lv_label_create(tview->test_table);
+    lv_label_set_text(tview->pressure_inside_label, "--");
+    lv_obj_set_style_text_font(tview->pressure_inside_label, &lv_font_montserrat_24,
                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(tview->pressure_inside_label, LV_GRID_ALIGN_START, 2, 1,
+                         LV_GRID_ALIGN_CENTER, 2, 1);
+
+    add_outdoor_column_icon(2);
+
+    tview->pressure_outside_label = lv_label_create(tview->test_table);
+    lv_label_set_text(tview->pressure_outside_label, "--");
+    lv_obj_set_style_text_font(tview->pressure_outside_label, &lv_font_montserrat_24,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(tview->pressure_outside_label, LV_GRID_ALIGN_START, 4, 1,
+                         LV_GRID_ALIGN_CENTER, 2, 1);
 
     // VOC row (indoor only)
-    tview->voc_row = create_row(tview->tab_3, -20, 160);
-    tview->voc_label = lv_label_create(tview->voc_row);
-    lv_label_set_text(tview->voc_label, "VOC --");
+    lv_obj_t* voc_title_label = lv_label_create(tview->test_table);
+    lv_label_set_text(voc_title_label, "V");
+    lv_obj_set_style_text_font(voc_title_label, &lv_font_montserrat_24,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(voc_title_label, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 3, 1);
+
+    add_secondary_column_icon(3);
+
+    tview->voc_label = lv_label_create(tview->test_table);
+    lv_label_set_text(tview->voc_label, "--");
     lv_obj_set_style_text_font(tview->voc_label, &lv_font_montserrat_24,
                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(tview->voc_label, LV_GRID_ALIGN_START, 2, 2, LV_GRID_ALIGN_CENTER, 3, 1);
 
     // CO2 row (indoor only)
-    tview->co2_row = create_row(tview->tab_3, -20, 200);
-
-    lv_obj_t* co2_icon_obj = lv_img_create(tview->co2_row);
+    lv_obj_t* co2_icon_obj = lv_img_create(tview->test_table);
     lv_img_set_src(co2_icon_obj, &co2);
+    lv_obj_set_grid_cell(co2_icon_obj, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 4, 1);
 
-    tview->co2_label = lv_label_create(tview->co2_row);
-    lv_label_set_text(tview->co2_label, "CO2 --");
+    add_secondary_column_icon(4);
+    add_outdoor_column_icon(4);
+
+    tview->co2_label = lv_label_create(tview->test_table);
+    lv_label_set_text(tview->co2_label, "--");
     lv_obj_set_style_text_font(tview->co2_label, &lv_font_montserrat_24,
                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(tview->co2_label, LV_GRID_ALIGN_START, 2, 2, LV_GRID_ALIGN_CENTER, 4, 1);
 
     // IAQ row (indoor only)
-    tview->iaq_row = create_row(tview->tab_3, -20, 240);
-
-    lv_obj_t* iaq_icon_obj = lv_img_create(tview->iaq_row);
+    lv_obj_t* iaq_icon_obj = lv_img_create(tview->test_table);
     lv_img_set_src(iaq_icon_obj, &aqi);
+    lv_obj_set_grid_cell(iaq_icon_obj, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 5, 1);
 
-    tview->iaq_label = lv_label_create(tview->iaq_row);
-    lv_label_set_text(tview->iaq_label, "IAQ --");
+    add_secondary_column_icon(5);
+    add_outdoor_column_icon(5);
+
+    tview->iaq_label = lv_label_create(tview->test_table);
+    lv_label_set_text(tview->iaq_label, "--");
     lv_obj_set_style_text_font(tview->iaq_label, &lv_font_montserrat_24,
                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(tview->iaq_label, LV_GRID_ALIGN_START, 2, 2, LV_GRID_ALIGN_CENTER, 5, 1);
     
 }
 
