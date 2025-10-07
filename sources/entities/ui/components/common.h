@@ -19,10 +19,10 @@
 LV_IMG_DECLARE(humidity_icon);
 LV_IMG_DECLARE(pressure_icon);
 LV_IMG_DECLARE(temperature);
+LV_IMG_DECLARE(wind_icon);
 LV_IMG_DECLARE(co2);
 LV_IMG_DECLARE(aqi);
 LV_FONT_DECLARE(Montserrat_96);
-
 typedef struct {
     lv_obj_t* cont;
     lv_obj_t* int_part;
@@ -83,13 +83,13 @@ typedef struct {
     lv_obj_t* tab_3;
     lv_obj_t* tab_bar;
     lv_obj_t* label;
-    lv_obj_t* test_table;
     lv_obj_t* temp_inside_label;
     lv_obj_t* temp_outside_label;
     lv_obj_t* humidity_inside_label;
     lv_obj_t* humidity_outside_label;
     lv_obj_t* pressure_inside_label;
     lv_obj_t* pressure_outside_label;
+    lv_obj_t* wind_speed_label;
     lv_obj_t* voc_label;
     lv_obj_t* co2_label;
     lv_obj_t* iaq_label;
@@ -117,7 +117,3 @@ lv_obj_t* draw_filled_half_circle(lv_obj_t* parent, lv_coord_t radius, lv_color_
 lv_obj_t* draw_circle(lv_obj_t* parent, lv_coord_t radius);
 
 #endif
-
-
-
-

@@ -406,6 +406,7 @@ public:
         }
         unlock();
     }
+
     void updateTemperatureTendency(uint8_t value, int8_t dir)
     {
         lock();
@@ -462,6 +463,21 @@ public:
         unlock();
     }
 
+    void updateOutsideWindSpeed(float value)
+    {
+        lock();
+        if (tv_ && tv_->wind_speed_label)
+        {
+            if (std::isnan(value))
+            {
+                lv_label_set_text(tv_->wind_speed_label, "--");
+            } else
+            {
+                lv_label_set_text_fmt(tv_->wind_speed_label, "%.1f m/s", value);
+            }
+        }
+        unlock();
+    }
     void updateOutsideHumidity(float value)
     {
         lock();
@@ -477,6 +493,7 @@ public:
         }
         unlock();
     }
+
     void updateHumidity(const std::string& dev_name, const float value)
     {
         lock();
@@ -509,6 +526,7 @@ public:
         }
         unlock();
     }
+
     void updateHumidityTendency(uint8_t value, int8_t dir)
     {
         lock();
@@ -600,10 +618,10 @@ public:
                 lv_label_set_text_fmt(tv_->pressure_inside_label, "%.0f%s", value, unit);
             }
         }
-        lv_meter_set_indicator_value(pressure_box_->gauge->meter, pressure_box_->gauge->needle,
-                                     value);
+        lv_meter_set_indicator_value(pressure_box_->gauge->meter, pressure_box_->gauge->needle, value);
         unlock();
     }
+
     void setPressurePlotValue(int16_t value, uint16_t id)
     {
         lock();
@@ -658,6 +676,7 @@ public:
         }
         unlock();
     }
+
     void updateCO2Tendency(uint8_t value, int8_t dir)
     {
         lock();
@@ -695,6 +714,7 @@ public:
         }
         unlock();
     }
+
     void updateVOCTendency(uint8_t value, int8_t dir)
     {
         lock();
@@ -732,6 +752,7 @@ public:
         }
         unlock();
     }
+
     void updateIAQTendency(uint8_t value, int8_t dir)
     {
         lock();
@@ -936,5 +957,6 @@ public:
         updateSettings(old_dev_name);
     }
 };
+
 
 

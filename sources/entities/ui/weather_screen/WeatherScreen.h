@@ -94,6 +94,7 @@ public:
         ui->currentWeatherBody.setTemperature(data.temperature);
         Dashboard::instance().updateOutsideTemperature(data.temperature);
         Dashboard::instance().updateOutsideHumidity(data.humidity);
+        Dashboard::instance().updateOutsideWindSpeed(data.windSpeed);
         Dashboard::instance().updateOutsidePressure(data.pressure);
         ui->currentWeatherBody.setDescription(data.description);
         ui->currentWeatherBody.setFeelsLikeTemp(data.feelsLike);
