@@ -66,7 +66,7 @@ const LV_ATTRIBUTE_MEM_ALIGN LV_ATTRIBUTE_LARGE_CONST LV_ATTRIBUTE_IMAGE_AQI uin
 };
 
 const lv_img_dsc_t aqi = {
-    .header.cf          = LV_IMG_CF_RGB565,
+    .header.cf          = LV_IMG_CF_RGB565A8,
     .header.always_zero = 0,
     .header.reserved    = 0,
     .header.w           = 20,
