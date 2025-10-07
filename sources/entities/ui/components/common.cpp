@@ -202,18 +202,18 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
 
     tview->temp_outside_label = lv_label_create(outdoor_section);
     lv_label_set_text(tview->temp_outside_label, "--");
-    lv_obj_set_style_text_font(tview->temp_outside_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->temp_outside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->temp_outside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->temp_outside_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
 
     lv_obj_t* feels_like_icon = lv_label_create(outdoor_section);
     lv_label_set_text(feels_like_icon, "FL");
-    lv_obj_set_style_text_font(feels_like_icon, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(feels_like_icon, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(feels_like_icon, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
 
     tview->feels_like_label = lv_label_create(outdoor_section);
     lv_label_set_text(tview->feels_like_label, "--");
-    lv_obj_set_style_text_font(tview->feels_like_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->feels_like_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->feels_like_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->feels_like_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
 
@@ -223,7 +223,7 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
 
     tview->humidity_outside_label = lv_label_create(outdoor_section);
     lv_label_set_text(tview->humidity_outside_label, "--%");
-    lv_obj_set_style_text_font(tview->humidity_outside_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->humidity_outside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->humidity_outside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->humidity_outside_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 
@@ -233,7 +233,7 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
 
     tview->pressure_outside_label = lv_label_create(outdoor_section);
     lv_label_set_text(tview->pressure_outside_label, "--");
-    lv_obj_set_style_text_font(tview->pressure_outside_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->pressure_outside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->pressure_outside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->pressure_outside_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 
@@ -243,29 +243,29 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
 
     tview->wind_speed_label = lv_label_create(outdoor_section);
     lv_label_set_text(tview->wind_speed_label, "--");
-    lv_obj_set_style_text_font(tview->wind_speed_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->wind_speed_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->wind_speed_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->wind_speed_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
     lv_obj_t* high_icon = lv_label_create(outdoor_section);
     lv_label_set_text(high_icon, LV_SYMBOL_UP);
-    lv_obj_set_style_text_font(high_icon, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(high_icon, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(high_icon, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
     tview->daily_high_label = lv_label_create(outdoor_section);
     lv_label_set_text(tview->daily_high_label, "--");
-    lv_obj_set_style_text_font(tview->daily_high_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->daily_high_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->daily_high_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->daily_high_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 
     lv_obj_t* low_icon = lv_label_create(outdoor_section);
     lv_label_set_text(low_icon, LV_SYMBOL_DOWN);
-    lv_obj_set_style_text_font(low_icon, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(low_icon, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(low_icon, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 3, 1);
 
     tview->daily_low_label = lv_label_create(outdoor_section);
     lv_label_set_text(tview->daily_low_label, "--");
-    lv_obj_set_style_text_font(tview->daily_low_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->daily_low_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->daily_low_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->daily_low_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 3, 1);
 }
@@ -290,7 +290,7 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_grid_cell(temperature_icon_indoor, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     tview->temp_inside_label = lv_label_create(indoor_section);
     lv_label_set_text(tview->temp_inside_label, "--");
-    lv_obj_set_style_text_font(tview->temp_inside_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->temp_inside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->temp_inside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->temp_inside_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     lv_obj_t* humidity_icon_indoor = lv_img_create(indoor_section);
@@ -298,7 +298,7 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_grid_cell(humidity_icon_indoor, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     tview->humidity_inside_label = lv_label_create(indoor_section);
     lv_label_set_text(tview->humidity_inside_label, "--%");
-    lv_obj_set_style_text_font(tview->humidity_inside_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->humidity_inside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->humidity_inside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->humidity_inside_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     lv_obj_t* pressure_icon_indoor = lv_img_create(indoor_section);
@@ -306,17 +306,17 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_grid_cell(pressure_icon_indoor, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     tview->pressure_inside_label = lv_label_create(indoor_section);
     lv_label_set_text(tview->pressure_inside_label, "--");
-    lv_obj_set_style_text_font(tview->pressure_inside_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->pressure_inside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->pressure_inside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->pressure_inside_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     lv_obj_t* voc_title_label = lv_label_create(indoor_section);
     lv_label_set_text(voc_title_label, "VOC");
-    lv_obj_set_style_text_font(voc_title_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(voc_title_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(voc_title_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(voc_title_label, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     tview->voc_label = lv_label_create(indoor_section);
     lv_label_set_text(tview->voc_label, "--");
-    lv_obj_set_style_text_font(tview->voc_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->voc_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->voc_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->voc_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     lv_obj_t* co2_icon_obj = lv_img_create(indoor_section);
@@ -324,7 +324,7 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_grid_cell(co2_icon_obj, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2, 1);
     tview->co2_label = lv_label_create(indoor_section);
     lv_label_set_text(tview->co2_label, "--");
-    lv_obj_set_style_text_font(tview->co2_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->co2_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->co2_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->co2_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
     lv_obj_t* iaq_icon_obj = lv_img_create(indoor_section);
@@ -332,7 +332,7 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_grid_cell(iaq_icon_obj, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
     tview->iaq_label = lv_label_create(indoor_section);
     lv_label_set_text(tview->iaq_label, "--");
-    lv_obj_set_style_text_font(tview->iaq_label, &lv_font_montserrat_24, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->iaq_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->iaq_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->iaq_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
 }
