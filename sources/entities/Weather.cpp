@@ -81,6 +81,8 @@ bool Weather::getCurrentWeather(Data* data)
         (json_obj_get_float(&jctx, "feels_like", &data->feelsLike) == OS_SUCCESS) &&
         (json_obj_get_float(&jctx, "pressure", &data->pressure) == OS_SUCCESS) &&
         (json_obj_get_float(&jctx, "humidity", &data->humidity) == OS_SUCCESS) &&
+        (json_obj_get_float(&jctx, "temp_min", &data->tempMin) == OS_SUCCESS) &&
+        (json_obj_get_float(&jctx, "temp_max", &data->tempMax) == OS_SUCCESS) &&
         (json_obj_leave_object(&jctx) == OS_SUCCESS) &&
         (json_obj_get_object(&jctx, "wind") == OS_SUCCESS) &&
         (json_obj_get_float(&jctx, "speed", &data->windSpeed) == OS_SUCCESS) &&
@@ -113,6 +115,8 @@ bool Weather::getCurrentWeather(Data* data)
     memset(ctx_->openWeatherDataBuffer, 0, sizeof(ctx_->openWeatherDataBuffer));
     data->temperature -= 273.15f;
     data->feelsLike -= 273.15f;
+    data->tempMin -= 273.15f;
+    data->tempMax -= 273.15f;
     return retVal;
 }
 bool Weather::getForecast(Data* data)

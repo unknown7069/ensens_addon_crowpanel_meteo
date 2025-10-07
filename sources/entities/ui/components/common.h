@@ -20,6 +20,7 @@ LV_IMG_DECLARE(humidity_icon);
 LV_IMG_DECLARE(pressure_icon);
 LV_IMG_DECLARE(temperature);
 LV_IMG_DECLARE(wind_icon);
+
 LV_IMG_DECLARE(co2);
 LV_IMG_DECLARE(aqi);
 LV_FONT_DECLARE(Montserrat_96);
@@ -90,6 +91,9 @@ typedef struct {
     lv_obj_t* pressure_inside_label;
     lv_obj_t* pressure_outside_label;
     lv_obj_t* wind_speed_label;
+    lv_obj_t* feels_like_label;
+    lv_obj_t* daily_high_label;
+    lv_obj_t* daily_low_label;
     lv_obj_t* voc_label;
     lv_obj_t* co2_label;
     lv_obj_t* iaq_label;

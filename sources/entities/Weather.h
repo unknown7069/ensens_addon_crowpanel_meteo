@@ -39,6 +39,8 @@ public:
         float    temperature;
         float    humidity;
         float    feelsLike;
+        float    tempMin;
+        float    tempMax;
         char     description[64];
         char     city[64];
         char     country[64];

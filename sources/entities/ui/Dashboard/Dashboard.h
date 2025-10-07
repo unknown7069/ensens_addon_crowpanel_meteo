@@ -478,6 +478,60 @@ public:
         }
         unlock();
     }
+    void updateOutsideFeelsLike(float value)
+    {
+        lock();
+        if (tv_ && tv_->feels_like_label)
+        {
+            if (std::isnan(value))
+            {
+                lv_label_set_text(tv_->feels_like_label, "--");
+            } else
+            {
+                float converted = convertValueToUnit(sensor_settings_->temperature, value);
+                const char* unit = unit_names.at(sensor_settings_->temperature);
+                lv_label_set_text_fmt(tv_->feels_like_label, "%+.1f%s", converted, unit);
+            }
+        }
+        unlock();
+    }
+
+    void updateOutsideDailyHigh(float value)
+    {
+        lock();
+        if (tv_ && tv_->daily_high_label)
+        {
+            if (std::isnan(value))
+            {
+                lv_label_set_text(tv_->daily_high_label, "--");
+            } else
+            {
+                float converted = convertValueToUnit(sensor_settings_->temperature, value);
+                const char* unit = unit_names.at(sensor_settings_->temperature);
+                lv_label_set_text_fmt(tv_->daily_high_label, "%.1f%s", converted, unit);
+            }
+        }
+        unlock();
+    }
+
+    void updateOutsideDailyLow(float value)
+    {
+        lock();
+        if (tv_ && tv_->daily_low_label)
+        {
+            if (std::isnan(value))
+            {
+                lv_label_set_text(tv_->daily_low_label, "--");
+            } else
+            {
+                float converted = convertValueToUnit(sensor_settings_->temperature, value);
+                const char* unit = unit_names.at(sensor_settings_->temperature);
+                lv_label_set_text_fmt(tv_->daily_low_label, "%.1f%s", converted, unit);
+            }
+        }
+        unlock();
+    }
+
     void updateOutsideHumidity(float value)
     {
         lock();
@@ -957,6 +1011,8 @@ public:
         updateSettings(old_dev_name);
     }
 };
+
+
 
 
 
