@@ -185,8 +185,9 @@ static void tabview_init_time_section(tabview_t* tview, lv_obj_t* section_grid)
 static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_grid)
 {
     lv_obj_t* outdoor_section = tabview_create_section(section_grid, 1, 0);
+    lv_obj_set_grid_cell(outdoor_section, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     lv_obj_set_layout(outdoor_section, LV_LAYOUT_GRID);
-    lv_obj_set_style_pad_row(outdoor_section, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_row(outdoor_section, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_column(outdoor_section, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
 
     static lv_coord_t outdoor_col_dsc[] = { LV_GRID_CONTENT, LV_GRID_FR(1), LV_GRID_CONTENT, LV_GRID_FR(1),
@@ -277,6 +278,7 @@ static void tabview_init_blank_section(lv_obj_t* section_grid)
 static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid)
 {
     lv_obj_t* indoor_section = tabview_create_section(section_grid, 1, 1);
+    lv_obj_set_grid_cell(indoor_section, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
     lv_obj_set_layout(indoor_section, LV_LAYOUT_GRID);
     lv_obj_set_style_pad_row(indoor_section, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_column(indoor_section, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -357,6 +359,26 @@ static void tabview_init_test_tab(tabview_t* tview)
     tabview_init_outdoor_section(tview, section_grid);
     tabview_init_blank_section(section_grid);
     tabview_init_indoor_section(tview, section_grid);
+
+    lv_obj_t* vertical_divider = lv_obj_create(section_grid);
+    lv_obj_remove_style_all(vertical_divider);
+    lv_obj_set_size(vertical_divider, 2, LV_PCT(100));
+    lv_obj_set_style_bg_color(vertical_divider, lv_palette_main(LV_PALETTE_GREY),
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(vertical_divider, LV_OPA_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(vertical_divider, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_add_flag(vertical_divider, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_align(vertical_divider, LV_ALIGN_CENTER, 0, 0);
+
+    lv_obj_t* horizontal_divider = lv_obj_create(section_grid);
+    lv_obj_remove_style_all(horizontal_divider);
+    lv_obj_set_size(horizontal_divider, LV_PCT(100), 2);
+    lv_obj_set_style_bg_color(horizontal_divider, lv_palette_main(LV_PALETTE_GREY),
+                              LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(horizontal_divider, LV_OPA_40, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(horizontal_divider, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_add_flag(horizontal_divider, LV_OBJ_FLAG_IGNORE_LAYOUT);
+    lv_obj_align(horizontal_divider, LV_ALIGN_CENTER, 0, 0);
 }
 tabview_t* tabview_create(lv_obj_t* parent, int32_t tab_h)
 {
@@ -523,3 +545,5 @@ lv_obj_t* draw_circle(lv_obj_t* parent, lv_coord_t radius)
     lv_obj_clear_flag(circle, LV_OBJ_FLAG_SCROLLABLE);
     return circle;
 }
+
+

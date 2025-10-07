@@ -457,7 +457,7 @@ public:
                 float converted = convertValueToDefault(UnitType::hPa, value);
                 converted = convertValueToUnit(sensor_settings_->pressure, converted);
                 const char* unit = unit_names.at(sensor_settings_->pressure);
-                lv_label_set_text_fmt(tv_->pressure_outside_label, "%.0f%s", converted, unit);
+                lv_label_set_text_fmt(tv_->pressure_outside_label, "%.0f %s", converted, unit);
             }
         }
         unlock();
@@ -669,7 +669,7 @@ public:
             } else
             {
                 const char* unit = unit_names.at(sensor_settings_->pressure);
-                lv_label_set_text_fmt(tv_->pressure_inside_label, "%.0f%s", value, unit);
+                lv_label_set_text_fmt(tv_->pressure_inside_label, "%.0f %s", value, unit);
             }
         }
         lv_meter_set_indicator_value(pressure_box_->gauge->meter, pressure_box_->gauge->needle, value);
