@@ -167,6 +167,30 @@ static lv_obj_t* tabview_create_section(lv_obj_t* section_grid, lv_coord_t col, 
     lv_obj_set_grid_cell(section, LV_GRID_ALIGN_STRETCH, col, 1, LV_GRID_ALIGN_STRETCH, row, 1);
     return section;
 }
+
+static void bottom_plot_x_axis_label_event_cb(lv_event_t* e)
+{
+    lv_obj_draw_part_dsc_t* dsc = lv_event_get_draw_part_dsc(e);
+    if (!lv_obj_draw_part_check_type(dsc, &lv_chart_class, LV_CHART_DRAW_PART_TICK_LABEL))
+        return;
+    if (dsc->id != LV_CHART_AXIS_PRIMARY_X || dsc->text == nullptr)
+        return;
+
+    int32_t hours = (int32_t)dsc->value * 4;
+    lv_snprintf(dsc->text, dsc->text_length, "%dh", (int)hours);
+}
+
+static void bottom_plot_y_axis_label_event_cb(lv_event_t* e)
+{
+    lv_obj_draw_part_dsc_t* dsc = lv_event_get_draw_part_dsc(e);
+    if (!lv_obj_draw_part_check_type(dsc, &lv_chart_class, LV_CHART_DRAW_PART_TICK_LABEL))
+        return;
+    if (dsc->id != LV_CHART_AXIS_PRIMARY_Y || dsc->text == nullptr)
+        return;
+
+    lv_snprintf(dsc->text, dsc->text_length, "%d", (int)dsc->value);
+}
+
 static void tabview_init_time_section(tabview_t* tview, lv_obj_t* section_grid)
 {
     lv_obj_t* time_section = tabview_create_section(section_grid, 0, 0);
@@ -270,10 +294,69 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
     lv_obj_set_grid_cell(tview->daily_low_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 3, 1);
 }
 
-static void tabview_init_blank_section(lv_obj_t* section_grid)
+static void tabview_init_blank_section(tabview_t* tview, lv_obj_t* section_grid)
 {
     lv_obj_t* blank_section = tabview_create_section(section_grid, 0, 1);
-    LV_UNUSED(blank_section);
+    lv_obj_set_layout(blank_section, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(blank_section, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(blank_section, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START,
+                          LV_FLEX_ALIGN_START);
+
+    tview->bottom_plot_title = lv_label_create(blank_section);
+    lv_label_set_text(tview->bottom_plot_title, "History");
+    lv_obj_set_width(tview->bottom_plot_title, LV_PCT(100));
+    lv_obj_set_style_text_font(tview->bottom_plot_title, &lv_font_montserrat_16,
+                               LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(tview->bottom_plot_title, LV_TEXT_ALIGN_CENTER,
+                                LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_t* plot_container = lv_obj_create(blank_section);
+    lv_obj_set_width(plot_container, LV_PCT(100));
+    lv_obj_set_flex_grow(plot_container, 1);
+    lv_obj_clear_flag(plot_container, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_opa(plot_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(plot_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(plot_container, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_layout(plot_container, LV_LAYOUT_GRID);
+    static lv_coord_t plot_grid_cols[] = { LV_GRID_CONTENT, LV_GRID_FR(1), LV_GRID_TEMPLATE_LAST };
+    static lv_coord_t plot_grid_rows[] = { LV_GRID_FR(1), LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST };
+    lv_obj_set_grid_dsc_array(plot_container, plot_grid_cols, plot_grid_rows);
+
+    lv_obj_t* plot_left_spacer = lv_obj_create(plot_container);
+    lv_obj_set_size(plot_left_spacer, 28, LV_PCT(100));
+    lv_obj_clear_flag(plot_left_spacer, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_opa(plot_left_spacer, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(plot_left_spacer, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(plot_left_spacer, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_STRETCH, 0, 1);
+
+    tview->bottom_plot_chart = lv_chart_create(plot_container);
+    lv_obj_set_size(tview->bottom_plot_chart, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_grid_cell(tview->bottom_plot_chart, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_STRETCH,
+                         0, 1);
+    lv_obj_set_style_pad_all(tview->bottom_plot_chart, 8, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(tview->bottom_plot_chart, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(tview->bottom_plot_chart, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_chart_set_type(tview->bottom_plot_chart, LV_CHART_TYPE_LINE);
+    lv_chart_set_point_count(tview->bottom_plot_chart, 24);
+    lv_chart_set_range(tview->bottom_plot_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 100);
+    lv_chart_set_axis_tick(tview->bottom_plot_chart, LV_CHART_AXIS_PRIMARY_Y, 6, 3, 6, 2, true, 40);
+    lv_chart_set_axis_tick(tview->bottom_plot_chart, LV_CHART_AXIS_PRIMARY_X, 6, 3, 7, 4, true, 30);
+    lv_obj_add_event_cb(tview->bottom_plot_chart, bottom_plot_x_axis_label_event_cb,
+                        LV_EVENT_DRAW_PART_BEGIN, nullptr);
+    lv_obj_add_event_cb(tview->bottom_plot_chart, bottom_plot_y_axis_label_event_cb,
+                        LV_EVENT_DRAW_PART_BEGIN, nullptr);
+    lv_obj_set_style_text_font(tview->bottom_plot_chart, &lv_font_montserrat_12,
+                               LV_PART_TICKS | LV_STATE_DEFAULT);
+    tview->bottom_plot_series = lv_chart_add_series(tview->bottom_plot_chart,
+                                                    lv_palette_main(LV_PALETTE_LIGHT_BLUE),
+                                                    LV_CHART_AXIS_PRIMARY_Y);
+    lv_chart_set_all_value(tview->bottom_plot_chart, tview->bottom_plot_series, 0);
+
+    lv_obj_t* plot_bottom_spacer = lv_obj_create(plot_container);
+    lv_obj_set_size(plot_bottom_spacer, LV_PCT(100), 24);
+    lv_obj_clear_flag(plot_bottom_spacer, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_opa(plot_bottom_spacer, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(plot_bottom_spacer, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(plot_bottom_spacer, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
 }
 static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid)
 {
@@ -357,7 +440,7 @@ static void tabview_init_test_tab(tabview_t* tview)
     lv_obj_set_grid_dsc_array(section_grid, section_col_dsc, section_row_dsc);
     tabview_init_time_section(tview, section_grid);
     tabview_init_outdoor_section(tview, section_grid);
-    tabview_init_blank_section(section_grid);
+    tabview_init_blank_section(tview, section_grid);
     tabview_init_indoor_section(tview, section_grid);
 
     lv_obj_t* vertical_divider = lv_obj_create(section_grid);

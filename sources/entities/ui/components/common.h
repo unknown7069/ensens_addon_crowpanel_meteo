@@ -98,6 +98,9 @@ typedef struct {
     lv_obj_t* co2_label;
     lv_obj_t* iaq_label;
     lv_obj_t* date_label;
+    lv_obj_t* bottom_plot_title;
+    lv_obj_t* bottom_plot_chart;
+    lv_chart_series_t* bottom_plot_series;
     int32_t   tab_h;
 } tabview_t;
 
