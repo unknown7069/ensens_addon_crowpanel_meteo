@@ -227,6 +227,30 @@ public:
     }
 };
 
+struct DailyMetricHistory {
+    static constexpr size_t  SlotsPerDay         = 48;
+    static constexpr uint32_t SlotDurationSecond = 30 * 60;
+
+    std::array<EnvironmentalSensor::DataSample<float>, SlotsPerDay> slots = {};
+    std::array<bool, SlotsPerDay>                                    has_value{};
+
+    int      current_year      = -1;
+    int      current_yday      = -1;
+    int      last_slot         = -1;
+    uint32_t last_slot_updated = 0;
+
+    bool store(const EnvironmentalSensor::DataSample<float>& sample);
+};
+
+struct IndoorDailyMetrics {
+    DailyMetricHistory temperature;
+    DailyMetricHistory humidity;
+    DailyMetricHistory pressure;
+    DailyMetricHistory co2;
+    DailyMetricHistory voc;
+    DailyMetricHistory iaq;
+};
+
 struct RealtimeData {
     // advertisement data is more frequent than characteristic data, therefore
     // bigger buffer
@@ -322,6 +346,7 @@ class Aggregator
 {
     std::unordered_map<std::string, RealtimeData> sensor_data_db;
     std::unordered_map<std::string, HistoryData>  history_data_db;
+    std::unordered_map<std::string, IndoorDailyMetrics> indoor_daily_metrics_db;
 
     std::unordered_map<std::string, Mean<MEAN_WINDOW_SIZE> > pressure_mean_db;
     std::unordered_map<std::string, PlotChartData>           pressure_plot_data_db;
@@ -329,6 +354,14 @@ class Aggregator
     SensorSettings sensor_settings;
 
     SemaphoreHandle_t mutex;
+
+    bool storeIndoorMetric(const std::string& dev_name, EnvironmentalSensor::Parameters param,
+                           const EnvironmentalSensor::DataSample<float>& sample);
+    DailyMetricHistory*       getIndoorMetricHistory(IndoorDailyMetrics& metrics,
+                                                     EnvironmentalSensor::Parameters param);
+    const DailyMetricHistory* getIndoorMetricHistory(const IndoorDailyMetrics& metrics,
+                                                     EnvironmentalSensor::Parameters param) const;
+    bool isIndoorSensor(const std::string& dev_name) const;
 
     Aggregator()                             = default;
     Aggregator(const Aggregator&)            = delete;
@@ -379,4 +412,9 @@ public:
     std::vector<std::string> getPressurePlotDataKeys();
     PlotChartData*           getPressurePlotData(const std::string& dev_name);
     void savePressurePlotData(const std::string& dev_name, const int16_t* data, size_t data_size);
+
+    bool getIndoorMetricSeries(
+        const std::string& dev_name, EnvironmentalSensor::Parameters param,
+        std::array<EnvironmentalSensor::DataSample<float>, DailyMetricHistory::SlotsPerDay>& slots,
+        std::array<bool, DailyMetricHistory::SlotsPerDay>& has_value);
 };

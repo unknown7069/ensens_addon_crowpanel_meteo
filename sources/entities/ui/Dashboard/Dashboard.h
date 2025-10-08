@@ -34,6 +34,8 @@ LV_IMG_DECLARE(settings);
 class Dashboard
 {
     static constexpr char TAG[] = "Dashboard";
+    enum class IndoorMetricPlot : uint8_t { Temperature, Humidity, Pressure, CO2, VOC, IAQ };
+
     tabview_t*            tv_;
     lv_obj_t*             cont_;
     default_box_t*        iaq_box_;
@@ -49,6 +51,7 @@ class Dashboard
     TimeZoneLabel         dateLabel;
     Button                settingsButton;
     Image                 configIcon;
+    IndoorMetricPlot      bottom_plot_metric_ = IndoorMetricPlot::Temperature;
 
     struct {
         float temperature;
@@ -68,6 +71,14 @@ class Dashboard
         std::vector<const char*> pressure_mmHg_labels = { " 800", " 783", " 766", " 750",
                                                           " 733", " 716", " 700" };
     } Y_axis_info_;
+
+    void setupBottomPlotSources();
+    void selectBottomPlotMetric(IndoorMetricPlot metric);
+    void updateBottomPlotInternal(IndoorMetricPlot metric);
+    void updateBottomPlot();
+    static void bottom_plot_source_event_cb(lv_event_t* e);
+    bool mapParameterToMetric(EnvironmentalSensor::Parameters param, IndoorMetricPlot& metric) const;
+    EnvironmentalSensor::Parameters parameterFromMetric(IndoorMetricPlot metric) const;
 
     static void configSettingsButtonCallback(lv_event_t* e, void* context)
     {
@@ -284,6 +295,8 @@ public:
     {
         return tv_;
     }
+
+    void handleIndoorMetricUpdate(const std::string& dev_name, EnvironmentalSensor::Parameters param);
 
     void create_main_elements(lv_obj_t* parent)
     {

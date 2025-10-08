@@ -336,7 +336,7 @@ static void tabview_init_blank_section(tabview_t* tview, lv_obj_t* section_grid)
     lv_obj_set_style_bg_opa(tview->bottom_plot_chart, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(tview->bottom_plot_chart, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_chart_set_type(tview->bottom_plot_chart, LV_CHART_TYPE_LINE);
-    lv_chart_set_point_count(tview->bottom_plot_chart, 24);
+    lv_chart_set_point_count(tview->bottom_plot_chart, 48);
     lv_chart_set_range(tview->bottom_plot_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 100);
     lv_chart_set_axis_tick(tview->bottom_plot_chart, LV_CHART_AXIS_PRIMARY_Y, 6, 3, 6, 2, true, 40);
     lv_chart_set_axis_tick(tview->bottom_plot_chart, LV_CHART_AXIS_PRIMARY_X, 6, 3, 7, 4, true, 30);

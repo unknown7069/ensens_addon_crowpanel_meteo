@@ -14,6 +14,115 @@
 #include <ctime>
 
 static auto TAG = "Aggregator";
+static constexpr const char* kIndoorSensorName = "indoor";
+
+bool DailyMetricHistory::store(const EnvironmentalSensor::DataSample<float>& sample)
+{
+    if (sample.timestamp == 0)
+        return false;
+
+    time_t     raw_time = static_cast<time_t>(sample.timestamp);
+    struct tm  timeinfo = {};
+#if defined(_MSC_VER)
+    if (localtime_s(&timeinfo, &raw_time) != 0)
+        return false;
+#else
+    if (localtime_r(&raw_time, &timeinfo) == nullptr)
+        return false;
+#endif
+
+    if (timeinfo.tm_year != current_year || timeinfo.tm_yday != current_yday)
+    {
+        current_year      = timeinfo.tm_year;
+        current_yday      = timeinfo.tm_yday;
+        has_value.fill(false);
+        last_slot         = -1;
+        last_slot_updated = 0;
+    }
+
+    const int minutes_since_midnight = timeinfo.tm_hour * 60 + timeinfo.tm_min;
+    const int slot =
+        static_cast<int>((static_cast<long>(minutes_since_midnight) * 60) / SlotDurationSecond);
+
+    if (slot < 0 || slot >= static_cast<int>(SlotsPerDay))
+        return false;
+
+    if (!has_value[slot] || sample.timestamp >= slots[slot].timestamp)
+    {
+        slots[slot]         = sample;
+        has_value[slot]     = true;
+        last_slot           = slot;
+        last_slot_updated   = sample.timestamp;
+        return true;
+    }
+
+    return false;
+}
+
+DailyMetricHistory* Aggregator::getIndoorMetricHistory(IndoorDailyMetrics& metrics,
+                                                       EnvironmentalSensor::Parameters param)
+{
+    switch (param)
+    {
+    case EnvironmentalSensor::Temperature:
+        return &metrics.temperature;
+    case EnvironmentalSensor::Humidity:
+        return &metrics.humidity;
+    case EnvironmentalSensor::Pressure:
+        return &metrics.pressure;
+    case EnvironmentalSensor::CO2:
+        return &metrics.co2;
+    case EnvironmentalSensor::VOC:
+        return &metrics.voc;
+    case EnvironmentalSensor::IAQ:
+        return &metrics.iaq;
+    default:
+        return nullptr;
+    }
+}
+
+const DailyMetricHistory* Aggregator::getIndoorMetricHistory(const IndoorDailyMetrics& metrics,
+                                                             EnvironmentalSensor::Parameters param) const
+{
+    switch (param)
+    {
+    case EnvironmentalSensor::Temperature:
+        return &metrics.temperature;
+    case EnvironmentalSensor::Humidity:
+        return &metrics.humidity;
+    case EnvironmentalSensor::Pressure:
+        return &metrics.pressure;
+    case EnvironmentalSensor::CO2:
+        return &metrics.co2;
+    case EnvironmentalSensor::VOC:
+        return &metrics.voc;
+    case EnvironmentalSensor::IAQ:
+        return &metrics.iaq;
+    default:
+        return nullptr;
+    }
+}
+
+bool Aggregator::storeIndoorMetric(const std::string& dev_name, EnvironmentalSensor::Parameters param,
+                                   const EnvironmentalSensor::DataSample<float>& sample)
+{
+    if (!isIndoorSensor(dev_name))
+        return false;
+    if (sample.flags.is_history())
+        return false;
+
+    IndoorDailyMetrics& metrics = indoor_daily_metrics_db[dev_name];
+    DailyMetricHistory* history = getIndoorMetricHistory(metrics, param);
+    if (history == nullptr)
+        return false;
+
+    return history->store(sample);
+}
+
+bool Aggregator::isIndoorSensor(const std::string& dev_name) const
+{
+    return dev_name == kIndoorSensorName;
+}
 
 void PlotChartData::pushHistoryData(float value)
 {
@@ -218,179 +327,254 @@ void Aggregator::addBatteryData(const std::string& dev_name, uint8_t battery)
 void Aggregator::addTemperatureData(const std::string&                     dev_name,
                                     EnvironmentalSensor::DataSample<float> temp)
 {
-    lock_guard                             lg(mutex);
-    RealtimeData&                          rt_data    = sensor_data_db[dev_name];
-    EnvironmentalSensor::DataSample<float> old_sample = {};
+    bool refresh_plot       = false;
+    bool is_selected_sensor = false;
 
-    convertToUnit(sensor_settings.temperature, temp);
-
-    if (rt_data.temperature.full() && rt_data.temperature.front(old_sample))
     {
-        float diff = temp.value - old_sample.value;
-        ESP_LOGD(TAG, "temp: diff=%.2f", diff);
-        Dashboard::instance().updateTemperatureTendency(convert_temp_diff(fabs(diff)),
-                                                        diff > 0.f ? 1 : -1);
+        lock_guard                             lg(mutex);
+        RealtimeData&                          rt_data    = sensor_data_db[dev_name];
+        EnvironmentalSensor::DataSample<float> old_sample = {};
+
+        convertToUnit(sensor_settings.temperature, temp);
+
+        if (rt_data.temperature.full() && rt_data.temperature.front(old_sample))
+        {
+            float diff = temp.value - old_sample.value;
+            ESP_LOGD(TAG, "temp: diff=%.2f", diff);
+            Dashboard::instance().updateTemperatureTendency(convert_temp_diff(fabs(diff)),
+                                                            diff > 0.f ? 1 : -1);
+        }
+
+        if (rt_data.temperature.empty() || rt_data.temperature.back_ref().value != temp.value)
+        {
+            Dashboard::instance().updateTemperature(dev_name, temp.value);
+        }
+
+        rt_data.temperature.push(temp);
+        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::Temperature, temp);
+        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
     }
 
-    if (rt_data.temperature.empty() || rt_data.temperature.back_ref().value != temp.value)
+    if (refresh_plot && is_selected_sensor)
     {
-        Dashboard::instance().updateTemperature(dev_name, temp.value);
+        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::Temperature);
     }
-
-    rt_data.temperature.push(temp);
 }
 
 void Aggregator::addHumidityData(const std::string&                     dev_name,
                                  EnvironmentalSensor::DataSample<float> humi)
 {
-    lock_guard                             lg(mutex);
-    RealtimeData&                          rt_data    = sensor_data_db[dev_name];
-    EnvironmentalSensor::DataSample<float> old_sample = {};
+    bool refresh_plot       = false;
+    bool is_selected_sensor = false;
 
-    if (rt_data.humidity.full() && rt_data.humidity.front(old_sample))
     {
-        float diff = humi.value - old_sample.value;
-        ESP_LOGD(TAG, "humi: diff=%.2f", diff);
-        Dashboard::instance().updateHumidityTendency(convert_humi_diff(fabs(diff)),
-                                                     diff > 0.f ? 1 : -1);
+        lock_guard                             lg(mutex);
+        RealtimeData&                          rt_data    = sensor_data_db[dev_name];
+        EnvironmentalSensor::DataSample<float> old_sample = {};
+
+        if (rt_data.humidity.full() && rt_data.humidity.front(old_sample))
+        {
+            float diff = humi.value - old_sample.value;
+            ESP_LOGD(TAG, "humi: diff=%.2f", diff);
+            Dashboard::instance().updateHumidityTendency(convert_humi_diff(fabs(diff)),
+                                                         diff > 0.f ? 1 : -1);
+        }
+
+        if (rt_data.humidity.empty() || rt_data.humidity.back_ref().value != humi.value)
+        {
+            Dashboard::instance().updateHumidity(dev_name, humi.value);
+            Dashboard::instance().updateDewPoint(dev_name);
+        }
+
+        rt_data.humidity.push(humi);
+        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::Humidity, humi);
+        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
     }
 
-    if (rt_data.humidity.empty() || rt_data.humidity.back_ref().value != humi.value)
+    if (refresh_plot && is_selected_sensor)
     {
-        Dashboard::instance().updateHumidity(dev_name, humi.value);
-        Dashboard::instance().updateDewPoint(dev_name);
+        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::Humidity);
     }
-
-    rt_data.humidity.push(humi);
 }
 
 void Aggregator::addPressureData(const std::string&                     dev_name,
                                  EnvironmentalSensor::DataSample<float> pressure)
 {
-    lock_guard              lg(mutex);
-    RealtimeData&           rt_data       = sensor_data_db[dev_name];
-    HistoryData&            h_data        = history_data_db[dev_name];
-    PlotChartData&          chart_data    = pressure_plot_data_db[dev_name];
-    Mean<MEAN_WINDOW_SIZE>& pressure_mean = pressure_mean_db[dev_name];
+    bool refresh_plot       = false;
+    bool is_selected_sensor = false;
 
-    if (dev_name == sensor_settings.sensor_name)
-        chart_data.setSelfStorageMode(false);
-
-    convertToUnit(sensor_settings.pressure, pressure);
-
-    if (pressure.flags.is_history())
     {
-        h_data.pressure.push(pressure);
-        chart_data.pushHistoryData(pressure.value);
-        return;
-    }
-    EnvironmentalSensor::DataSample<float> old_sample = {};
+        lock_guard              lg(mutex);
+        RealtimeData&           rt_data       = sensor_data_db[dev_name];
+        HistoryData&            h_data        = history_data_db[dev_name];
+        PlotChartData&          chart_data    = pressure_plot_data_db[dev_name];
+        Mean<MEAN_WINDOW_SIZE>& pressure_mean = pressure_mean_db[dev_name];
 
-    if (rt_data.pressure.full() && rt_data.pressure.front(old_sample))
+        if (dev_name == sensor_settings.sensor_name)
+            chart_data.setSelfStorageMode(false);
+
+        convertToUnit(sensor_settings.pressure, pressure);
+
+        if (pressure.flags.is_history())
+        {
+            h_data.pressure.push(pressure);
+            chart_data.pushHistoryData(pressure.value);
+            return;
+        }
+        EnvironmentalSensor::DataSample<float> old_sample = {};
+
+        if (rt_data.pressure.full() && rt_data.pressure.front(old_sample))
+        {
+            if (old_sample.unit != pressure.unit)
+                convertToUnit(sensor_settings.pressure, old_sample);
+            float diff = pressure.value - old_sample.value;
+            ESP_LOGD(TAG, "pressure: diff=%.2f", diff);
+            Dashboard::instance().updatePressureTendency(convert_pressure_diff(fabs(diff)),
+                                                         diff > 0.f ? 1 : -1);
+        }
+        if (!pressure_mean.add(pressure.value))
+        {
+            // Now "mean" value isn't used
+            // Instead of it is used "runtime" value from sensor
+
+            float mean = pressure_mean.get();
+
+            EnvironmentalSensor::Flags flags;
+            flags.set_source(EnvironmentalSensor::Source::NONE);
+            time_t time_val = time(nullptr);
+            auto   t        = static_cast<uint32_t>(time_val);
+            // ESP_LOGD(TAG, "pressure: dev_name=%s, time=%lu, mean=%.2f", dev_name.c_str(), t, mean);
+            ESP_LOGD(TAG, "pressure: dev_name=%s, time=%lu, mean=%.2f", dev_name.c_str(), t,
+                     pressure.value);
+            // h_data.pressure.push({
+            //     .timestamp = t,
+            //     .flags     = flags,
+            //     .value     = mean,
+            // });
+            h_data.pressure.push({
+                .timestamp = t,
+                .flags     = flags,
+                .value     = pressure.value,
+            });
+            // chart_data.pushLiveData(mean);
+            chart_data.pushLiveData(pressure.value);
+            pressure_mean.reset();
+            pressure_mean.add(pressure.value);
+        }
+
+        if (rt_data.pressure.empty() || rt_data.pressure.back_ref().value != pressure.value)
+        {
+            Dashboard::instance().updatePressure(dev_name, pressure.value);
+        }
+
+        rt_data.pressure.push(pressure);
+        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::Pressure, pressure);
+        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
+    }
+
+    if (refresh_plot && is_selected_sensor)
     {
-        if (old_sample.unit != pressure.unit)
-            convertToUnit(sensor_settings.pressure, old_sample);
-        float diff = pressure.value - old_sample.value;
-        ESP_LOGD(TAG, "pressure: diff=%.2f", diff);
-        Dashboard::instance().updatePressureTendency(convert_pressure_diff(fabs(diff)),
-                                                     diff > 0.f ? 1 : -1);
+        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::Pressure);
     }
-    if (!pressure_mean.add(pressure.value))
-    {
-        // Now "mean" value isn't used
-        // Instead of it is used "runtime" value from sensor
-
-        float mean = pressure_mean.get();
-
-        EnvironmentalSensor::Flags flags;
-        flags.set_source(EnvironmentalSensor::Source::NONE);
-        time_t time_val = time(nullptr);
-        auto   t        = static_cast<uint32_t>(time_val);
-        // ESP_LOGD(TAG, "pressure: dev_name=%s, time=%lu, mean=%.2f", dev_name.c_str(), t, mean);
-        ESP_LOGD(TAG, "pressure: dev_name=%s, time=%lu, mean=%.2f", dev_name.c_str(), t,
-                 pressure.value);
-        // h_data.pressure.push({
-        //     .timestamp = t,
-        //     .flags     = flags,
-        //     .value     = mean,
-        // });
-        h_data.pressure.push({
-            .timestamp = t,
-            .flags     = flags,
-            .value     = pressure.value,
-        });
-        // chart_data.pushLiveData(mean);
-        chart_data.pushLiveData(pressure.value);
-        pressure_mean.reset();
-        pressure_mean.add(pressure.value);
-    }
-
-    if (rt_data.pressure.empty() || rt_data.pressure.back_ref().value != pressure.value)
-    {
-        Dashboard::instance().updatePressure(dev_name, pressure.value);
-    }
-
-    rt_data.pressure.push(pressure);
 }
 
 void Aggregator::addCO2Data(const std::string& dev_name, EnvironmentalSensor::DataSample<float> co2)
 {
-    lock_guard                             lg(mutex);
-    RealtimeData&                          rt_data    = sensor_data_db[dev_name];
-    EnvironmentalSensor::DataSample<float> old_sample = {};
-    if (rt_data.co2.full() && rt_data.co2.front(old_sample))
+    bool refresh_plot       = false;
+    bool is_selected_sensor = false;
+
     {
-        float diff = co2.value - old_sample.value;
-        ESP_LOGD(TAG, "co2: diff=%.2f", diff);
-        Dashboard::instance().updateCO2Tendency(convert_co2_diff(fabs(diff)), diff > 0.f ? 1 : -1);
+        lock_guard                             lg(mutex);
+        RealtimeData&                          rt_data    = sensor_data_db[dev_name];
+        EnvironmentalSensor::DataSample<float> old_sample = {};
+        if (rt_data.co2.full() && rt_data.co2.front(old_sample))
+        {
+            float diff = co2.value - old_sample.value;
+            ESP_LOGD(TAG, "co2: diff=%.2f", diff);
+            Dashboard::instance().updateCO2Tendency(convert_co2_diff(fabs(diff)),
+                                                     diff > 0.f ? 1 : -1);
+        }
+
+        if (rt_data.co2.empty() || rt_data.co2.back_ref().value != co2.value)
+        {
+            Dashboard::instance().updateCO2(dev_name, co2.value);
+        }
+
+        rt_data.co2.push(co2);
+        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::CO2, co2);
+        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
     }
 
-    if (rt_data.co2.empty() || rt_data.co2.back_ref().value != co2.value)
+    if (refresh_plot && is_selected_sensor)
     {
-        Dashboard::instance().updateCO2(dev_name, co2.value);
+        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::CO2);
     }
-
-    rt_data.co2.push(co2);
 }
 
 void Aggregator::addVOCData(const std::string& dev_name, EnvironmentalSensor::DataSample<float> voc)
 {
-    lock_guard                             lg(mutex);
-    RealtimeData&                          rt_data    = sensor_data_db[dev_name];
-    EnvironmentalSensor::DataSample<float> old_sample = {};
-    if (rt_data.voc.full() && rt_data.voc.front(old_sample))
+    bool refresh_plot       = false;
+    bool is_selected_sensor = false;
+
     {
-        float diff = voc.value - old_sample.value;
-        ESP_LOGD(TAG, "voc: diff=%.2f", diff);
-        Dashboard::instance().updateVOCTendency(convert_voc_diff(fabs(diff)), diff > 0.f ? 1 : -1);
+        lock_guard                             lg(mutex);
+        RealtimeData&                          rt_data    = sensor_data_db[dev_name];
+        EnvironmentalSensor::DataSample<float> old_sample = {};
+        if (rt_data.voc.full() && rt_data.voc.front(old_sample))
+        {
+            float diff = voc.value - old_sample.value;
+            ESP_LOGD(TAG, "voc: diff=%.2f", diff);
+            Dashboard::instance().updateVOCTendency(convert_voc_diff(fabs(diff)),
+                                                     diff > 0.f ? 1 : -1);
+        }
+
+        if (rt_data.voc.empty() || rt_data.voc.back_ref().value != voc.value)
+        {
+            Dashboard::instance().updateVOC(dev_name, voc.value);
+        }
+
+        rt_data.voc.push(voc);
+        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::VOC, voc);
+        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
     }
 
-    if (rt_data.voc.empty() || rt_data.voc.back_ref().value != voc.value)
+    if (refresh_plot && is_selected_sensor)
     {
-        Dashboard::instance().updateVOC(dev_name, voc.value);
+        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::VOC);
     }
-
-    rt_data.voc.push(voc);
 }
 
 void Aggregator::addIAQData(const std::string& dev_name, EnvironmentalSensor::DataSample<float> iaq)
 {
-    lock_guard                             lg(mutex);
-    RealtimeData&                          rt_data    = sensor_data_db[dev_name];
-    EnvironmentalSensor::DataSample<float> old_sample = {};
-    if (rt_data.iaq.full() && rt_data.iaq.front(old_sample))
+    bool refresh_plot       = false;
+    bool is_selected_sensor = false;
+
     {
-        float diff = iaq.value - old_sample.value;
-        ESP_LOGD(TAG, "iaq: diff=%.2f", diff);
-        Dashboard::instance().updateIAQTendency(convert_iaq_diff(fabs(diff)), diff > 0.f ? 1 : -1);
+        lock_guard                             lg(mutex);
+        RealtimeData&                          rt_data    = sensor_data_db[dev_name];
+        EnvironmentalSensor::DataSample<float> old_sample = {};
+        if (rt_data.iaq.full() && rt_data.iaq.front(old_sample))
+        {
+            float diff = iaq.value - old_sample.value;
+            ESP_LOGD(TAG, "iaq: diff=%.2f", diff);
+            Dashboard::instance().updateIAQTendency(convert_iaq_diff(fabs(diff)),
+                                                     diff > 0.f ? 1 : -1);
+        }
+
+        if (rt_data.iaq.empty() || rt_data.iaq.back_ref().value != iaq.value)
+        {
+            Dashboard::instance().updateIAQ(dev_name, iaq.value);
+        }
+
+        rt_data.iaq.push(iaq);
+        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::IAQ, iaq);
+        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
     }
 
-    if (rt_data.iaq.empty() || rt_data.iaq.back_ref().value != iaq.value)
+    if (refresh_plot && is_selected_sensor)
     {
-        Dashboard::instance().updateIAQ(dev_name, iaq.value);
+        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::IAQ);
     }
-
-    rt_data.iaq.push(iaq);
 }
 
 void Aggregator::addDevice(const std::string& dev_name)
@@ -465,6 +649,26 @@ bool Aggregator::getIAQData(const std::string&                      dev_name,
     if (iaq.empty())
         return false;
     data = iaq.back_ref();
+    return true;
+}
+
+bool Aggregator::getIndoorMetricSeries(
+    const std::string& dev_name, EnvironmentalSensor::Parameters param,
+    std::array<EnvironmentalSensor::DataSample<float>, DailyMetricHistory::SlotsPerDay>& slots,
+    std::array<bool, DailyMetricHistory::SlotsPerDay>& has_value)
+{
+    lock_guard lg(mutex);
+
+    auto metrics_it = indoor_daily_metrics_db.find(dev_name);
+    if (metrics_it == indoor_daily_metrics_db.end())
+        return false;
+
+    const DailyMetricHistory* history = getIndoorMetricHistory(metrics_it->second, param);
+    if (history == nullptr)
+        return false;
+
+    slots     = history->slots;
+    has_value = history->has_value;
     return true;
 }
 
