@@ -52,6 +52,7 @@ class Dashboard
     Button                settingsButton;
     Image                 configIcon;
     IndoorMetricPlot      bottom_plot_metric_ = IndoorMetricPlot::Temperature;
+    uint32_t              current_timestamp_  = 0;
 
     struct {
         float temperature;
@@ -294,6 +295,14 @@ public:
     tabview_t* getTabView()
     {
         return tv_;
+    }
+
+    uint32_t getCurrentTimestamp()
+    {
+        lock();
+        uint32_t ts = current_timestamp_;
+        unlock();
+        return ts;
     }
 
     void handleIndoorMetricUpdate(const std::string& dev_name, EnvironmentalSensor::Parameters param);
@@ -841,6 +850,8 @@ public:
     void updateTimeLabel(uint32_t timestamp, uint32_t timestampOffset)
     {
         lock();
+
+        current_timestamp_ = timestamp;
 
         timeZoneLabel.setCurrentTime(timestamp);
         dateLabel.setCurrentDate(timestamp, "%d.%m.%y");

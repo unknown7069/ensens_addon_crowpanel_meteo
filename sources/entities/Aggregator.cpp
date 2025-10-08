@@ -116,7 +116,12 @@ bool Aggregator::storeIndoorMetric(const std::string& dev_name, EnvironmentalSen
     if (history == nullptr)
         return false;
 
-    return history->store(sample);
+    EnvironmentalSensor::DataSample<float> adjusted_sample = sample;
+    uint32_t dashboard_ts = Dashboard::instance().getCurrentTimestamp();
+    if (dashboard_ts != 0)
+        adjusted_sample.timestamp = dashboard_ts;
+
+    return history->store(adjusted_sample);
 }
 
 bool Aggregator::isIndoorSensor(const std::string& dev_name) const

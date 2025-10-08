@@ -5,6 +5,7 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <ctime>
 #include <limits>
 
@@ -198,13 +199,27 @@ void Dashboard::updateBottomPlotInternal(IndoorMetricPlot metric)
         if (slot_minutes == 0)
             slot_minutes = 1;
 
-        time_t now = time(nullptr);
+        uint32_t timestamp = current_timestamp_;
+        if (timestamp == 0)
+        {
+            time_t now = time(nullptr);
+            timestamp  = static_cast<uint32_t>(now);
+        }
+
+        time_t    raw_time = static_cast<time_t>(timestamp);
         struct tm local_time {};
 #if defined(_MSC_VER)
-        localtime_s(&local_time, &now);
+        if (localtime_s(&local_time, &raw_time) != 0)
+        {
+            std::memset(&local_time, 0, sizeof(local_time));
+        }
 #else
-        localtime_r(&now, &local_time);
+        if (localtime_r(&raw_time, &local_time) == nullptr)
+        {
+            std::memset(&local_time, 0, sizeof(local_time));
+        }
 #endif
+
         uint32_t minutes_since_midnight = static_cast<uint32_t>(local_time.tm_hour) * 60U +
                                           static_cast<uint32_t>(local_time.tm_min);
         uint16_t slot_index =
@@ -212,9 +227,10 @@ void Dashboard::updateBottomPlotInternal(IndoorMetricPlot metric)
         if (slot_index >= DailyMetricHistory::SlotsPerDay)
             slot_index = DailyMetricHistory::SlotsPerDay - 1;
 
-        lv_point_t cursor_pos;
+        lv_point_t cursor_pos = { 0, 0 };
         lv_chart_get_point_pos_by_id(tv_->bottom_plot_chart, tv_->bottom_plot_series, slot_index,
                                      &cursor_pos);
+        cursor_pos.y = 0;
         lv_chart_set_cursor_pos(tv_->bottom_plot_chart, tv_->bottom_plot_cursor, &cursor_pos);
     }
 
