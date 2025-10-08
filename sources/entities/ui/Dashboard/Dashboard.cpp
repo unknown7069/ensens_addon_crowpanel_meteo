@@ -5,6 +5,7 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <ctime>
 #include <limits>
 
 lv_obj_t* Dashboard::create(SensorSettings* sensor_settings, lv_obj_t* parent)
@@ -190,6 +191,32 @@ void Dashboard::updateBottomPlotInternal(IndoorMetricPlot metric)
     char title_buffer[64];
     std::snprintf(title_buffer, sizeof(title_buffer), "%s (%s)", metric_label, unit_label);
     lv_label_set_text(tv_->bottom_plot_title, title_buffer);
+
+    if (tv_->bottom_plot_cursor)
+    {
+        uint32_t slot_minutes = DailyMetricHistory::SlotDurationSecond / 60U;
+        if (slot_minutes == 0)
+            slot_minutes = 1;
+
+        time_t now = time(nullptr);
+        struct tm local_time {};
+#if defined(_MSC_VER)
+        localtime_s(&local_time, &now);
+#else
+        localtime_r(&now, &local_time);
+#endif
+        uint32_t minutes_since_midnight = static_cast<uint32_t>(local_time.tm_hour) * 60U +
+                                          static_cast<uint32_t>(local_time.tm_min);
+        uint16_t slot_index =
+            static_cast<uint16_t>(minutes_since_midnight / slot_minutes);
+        if (slot_index >= DailyMetricHistory::SlotsPerDay)
+            slot_index = DailyMetricHistory::SlotsPerDay - 1;
+
+        lv_point_t cursor_pos;
+        lv_chart_get_point_pos_by_id(tv_->bottom_plot_chart, tv_->bottom_plot_series, slot_index,
+                                     &cursor_pos);
+        lv_chart_set_cursor_pos(tv_->bottom_plot_chart, tv_->bottom_plot_cursor, &cursor_pos);
+    }
 
     lv_chart_refresh(tv_->bottom_plot_chart);
     unlock();

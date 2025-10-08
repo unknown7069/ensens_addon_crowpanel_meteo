@@ -101,6 +101,7 @@ typedef struct {
     lv_obj_t* bottom_plot_title;
     lv_obj_t* bottom_plot_chart;
     lv_chart_series_t* bottom_plot_series;
+    lv_chart_cursor_t* bottom_plot_cursor;
     int32_t   tab_h;
 } tabview_t;
 

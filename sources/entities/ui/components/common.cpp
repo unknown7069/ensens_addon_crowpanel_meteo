@@ -168,6 +168,11 @@ static lv_obj_t* tabview_create_section(lv_obj_t* section_grid, lv_coord_t col, 
     return section;
 }
 
+namespace
+{
+constexpr uint16_t kBottomPlotSlotCount = 48;
+} // namespace
+
 static void bottom_plot_x_axis_label_event_cb(lv_event_t* e)
 {
     lv_obj_draw_part_dsc_t* dsc = lv_event_get_draw_part_dsc(e);
@@ -176,8 +181,8 @@ static void bottom_plot_x_axis_label_event_cb(lv_event_t* e)
     if (dsc->id != LV_CHART_AXIS_PRIMARY_X || dsc->text == nullptr)
         return;
 
-    int32_t hours = (int32_t)dsc->value * 4;
-    lv_snprintf(dsc->text, dsc->text_length, "%dh", (int)hours);
+    int32_t hours = static_cast<int32_t>(dsc->value) * 4;
+    lv_snprintf(dsc->text, dsc->text_length, "%dh", static_cast<int>(hours));
 }
 
 static void bottom_plot_y_axis_label_event_cb(lv_event_t* e)
@@ -189,6 +194,21 @@ static void bottom_plot_y_axis_label_event_cb(lv_event_t* e)
         return;
 
     lv_snprintf(dsc->text, dsc->text_length, "%d", (int)dsc->value);
+}
+
+static void bottom_plot_cursor_draw_event_cb(lv_event_t* e)
+{
+    lv_obj_draw_part_dsc_t* dsc = lv_event_get_draw_part_dsc(e);
+    if (!lv_obj_draw_part_check_type(dsc, &lv_chart_class, LV_CHART_DRAW_PART_CURSOR))
+        return;
+
+    if (dsc->line_dsc != nullptr)
+    {
+        dsc->line_dsc->color      = lv_color_white();
+        dsc->line_dsc->width      = 2;
+        dsc->line_dsc->dash_width = 4;
+        dsc->line_dsc->dash_gap   = 4;
+    }
 }
 
 static void tabview_init_time_section(tabview_t* tview, lv_obj_t* section_grid)
@@ -336,7 +356,7 @@ static void tabview_init_blank_section(tabview_t* tview, lv_obj_t* section_grid)
     lv_obj_set_style_bg_opa(tview->bottom_plot_chart, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_border_opa(tview->bottom_plot_chart, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_chart_set_type(tview->bottom_plot_chart, LV_CHART_TYPE_LINE);
-    lv_chart_set_point_count(tview->bottom_plot_chart, 48);
+    lv_chart_set_point_count(tview->bottom_plot_chart, kBottomPlotSlotCount);
     lv_chart_set_range(tview->bottom_plot_chart, LV_CHART_AXIS_PRIMARY_Y, 0, 100);
     lv_chart_set_axis_tick(tview->bottom_plot_chart, LV_CHART_AXIS_PRIMARY_Y, 6, 3, 6, 2, true, 40);
     lv_chart_set_axis_tick(tview->bottom_plot_chart, LV_CHART_AXIS_PRIMARY_X, 6, 3, 7, 4, true, 30);
@@ -344,12 +364,21 @@ static void tabview_init_blank_section(tabview_t* tview, lv_obj_t* section_grid)
                         LV_EVENT_DRAW_PART_BEGIN, nullptr);
     lv_obj_add_event_cb(tview->bottom_plot_chart, bottom_plot_y_axis_label_event_cb,
                         LV_EVENT_DRAW_PART_BEGIN, nullptr);
+    lv_obj_add_event_cb(tview->bottom_plot_chart, bottom_plot_cursor_draw_event_cb,
+                        LV_EVENT_DRAW_PART_BEGIN, nullptr);
     lv_obj_set_style_text_font(tview->bottom_plot_chart, &lv_font_montserrat_12,
                                LV_PART_TICKS | LV_STATE_DEFAULT);
     tview->bottom_plot_series = lv_chart_add_series(tview->bottom_plot_chart,
                                                     lv_palette_main(LV_PALETTE_LIGHT_BLUE),
                                                     LV_CHART_AXIS_PRIMARY_Y);
     lv_chart_set_all_value(tview->bottom_plot_chart, tview->bottom_plot_series, 0);
+    tview->bottom_plot_cursor =
+        lv_chart_add_cursor(tview->bottom_plot_chart, lv_color_white(), LV_DIR_VER);
+    if (tview->bottom_plot_cursor)
+    {
+        lv_point_t origin = { 0, 0 };
+        lv_chart_set_cursor_pos(tview->bottom_plot_chart, tview->bottom_plot_cursor, &origin);
+    }
 
     lv_obj_t* plot_bottom_spacer = lv_obj_create(plot_container);
     lv_obj_set_size(plot_bottom_spacer, LV_PCT(100), 24);
