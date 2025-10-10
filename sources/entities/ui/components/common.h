@@ -82,6 +82,7 @@ typedef struct {
     lv_obj_t* tab_1;
     lv_obj_t* tab_2;
     lv_obj_t* tab_3;
+    lv_obj_t* tab_history;
     lv_obj_t* tab_bar;
     lv_obj_t* label;
     lv_obj_t* temp_inside_label;

@@ -168,6 +168,25 @@ static lv_obj_t* tabview_create_section(lv_obj_t* section_grid, lv_coord_t col, 
     return section;
 }
 
+static void tabview_navigate_history_cb(lv_event_t* e)
+{
+    tabview_t* tview = static_cast<tabview_t*>(lv_event_get_user_data(e));
+    if (tview == nullptr || tview->cont == nullptr || tview->tab_history == nullptr)
+        return;
+
+    uint32_t history_index = lv_obj_get_index(tview->tab_history);
+    lv_tabview_set_act(tview->cont, history_index, LV_ANIM_ON);
+}
+
+static void tabview_make_metric_clickable(lv_obj_t* obj, tabview_t* tview)
+{
+    if (obj == nullptr || tview == nullptr)
+        return;
+
+    lv_obj_add_flag(obj, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_event_cb(obj, tabview_navigate_history_cb, LV_EVENT_CLICKED, tview);
+}
+
 namespace
 {
 constexpr uint16_t kBottomPlotSlotCount = 48;
@@ -221,10 +240,12 @@ static void tabview_init_time_section(tabview_t* tview, lv_obj_t* section_grid)
     lv_label_set_text(tview->label, "--:--");
     lv_obj_set_style_text_font(tview->label, &Montserrat_96, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    tabview_make_metric_clickable(tview->label, tview);
     tview->date_label = lv_label_create(time_section);
     lv_label_set_text(tview->date_label, "--");
     lv_obj_set_style_text_font(tview->date_label, &lv_font_montserrat_32, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->date_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    tabview_make_metric_clickable(tview->date_label, tview);
 }
 static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_grid)
 {
@@ -249,6 +270,7 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
     lv_obj_set_style_text_font(tview->temp_outside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->temp_outside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->temp_outside_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+    tabview_make_metric_clickable(tview->temp_outside_label, tview);
 
     lv_obj_t* feels_like_icon = lv_label_create(outdoor_section);
     lv_label_set_text(feels_like_icon, "FL");
@@ -260,6 +282,7 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
     lv_obj_set_style_text_font(tview->feels_like_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->feels_like_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->feels_like_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+    tabview_make_metric_clickable(tview->feels_like_label, tview);
 
     lv_obj_t* humidity_icon_obj = lv_img_create(outdoor_section);
     lv_img_set_src(humidity_icon_obj, &humidity_icon);
@@ -270,6 +293,7 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
     lv_obj_set_style_text_font(tview->humidity_outside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->humidity_outside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->humidity_outside_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    tabview_make_metric_clickable(tview->humidity_outside_label, tview);
 
     lv_obj_t* pressure_icon_obj = lv_img_create(outdoor_section);
     lv_img_set_src(pressure_icon_obj, &pressure_icon);
@@ -280,6 +304,7 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
     lv_obj_set_style_text_font(tview->pressure_outside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->pressure_outside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->pressure_outside_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    tabview_make_metric_clickable(tview->pressure_outside_label, tview);
 
     lv_obj_t* wind_icon_obj = lv_img_create(outdoor_section);
     lv_img_set_src(wind_icon_obj, &wind_icon);
@@ -290,6 +315,7 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
     lv_obj_set_style_text_font(tview->wind_speed_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->wind_speed_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->wind_speed_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+    tabview_make_metric_clickable(tview->wind_speed_label, tview);
 
     lv_obj_t* high_icon = lv_label_create(outdoor_section);
     lv_label_set_text(high_icon, LV_SYMBOL_UP);
@@ -301,6 +327,7 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
     lv_obj_set_style_text_font(tview->daily_high_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->daily_high_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->daily_high_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+    tabview_make_metric_clickable(tview->daily_high_label, tview);
 
     lv_obj_t* low_icon = lv_label_create(outdoor_section);
     lv_label_set_text(low_icon, LV_SYMBOL_DOWN);
@@ -312,24 +339,39 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
     lv_obj_set_style_text_font(tview->daily_low_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->daily_low_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->daily_low_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 3, 1);
+    tabview_make_metric_clickable(tview->daily_low_label, tview);
 }
 
-static void tabview_init_blank_section(tabview_t* tview, lv_obj_t* section_grid)
+static void tabview_init_history_tab(tabview_t* tview)
 {
-    lv_obj_t* blank_section = tabview_create_section(section_grid, 0, 1);
-    lv_obj_set_layout(blank_section, LV_LAYOUT_FLEX);
-    lv_obj_set_flex_flow(blank_section, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_align(blank_section, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START,
-                          LV_FLEX_ALIGN_START);
+    if (tview == nullptr)
+        return;
 
-    tview->bottom_plot_title = lv_label_create(blank_section);
+    tview->tab_history = lv_tabview_add_tab(tview->cont, "History");
+    lv_obj_set_style_pad_top(tview->tab_history, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(tview->tab_history, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+
+    lv_obj_t* history_root = lv_obj_create(tview->tab_history);
+    lv_obj_set_size(history_root, LV_PCT(100), LV_PCT(100));
+    lv_obj_clear_flag(history_root, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_style_bg_opa(history_root, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_border_opa(history_root, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_all(history_root, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_row(history_root, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_column(history_root, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_layout(history_root, LV_LAYOUT_FLEX);
+    lv_obj_set_flex_flow(history_root, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(history_root, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
+
+    tview->bottom_plot_title = lv_label_create(history_root);
     lv_label_set_text(tview->bottom_plot_title, "History");
     lv_obj_set_width(tview->bottom_plot_title, LV_PCT(100));
     lv_obj_set_style_text_font(tview->bottom_plot_title, &lv_font_montserrat_16,
                                LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->bottom_plot_title, LV_TEXT_ALIGN_CENTER,
                                 LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_t* plot_container = lv_obj_create(blank_section);
+
+    lv_obj_t* plot_container = lv_obj_create(history_root);
     lv_obj_set_width(plot_container, LV_PCT(100));
     lv_obj_set_flex_grow(plot_container, 1);
     lv_obj_clear_flag(plot_container, LV_OBJ_FLAG_SCROLLABLE);
@@ -389,8 +431,8 @@ static void tabview_init_blank_section(tabview_t* tview, lv_obj_t* section_grid)
 }
 static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid)
 {
-    lv_obj_t* indoor_section = tabview_create_section(section_grid, 1, 1);
-    lv_obj_set_grid_cell(indoor_section, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    lv_obj_t* indoor_section = tabview_create_section(section_grid, 0, 1);
+    lv_obj_set_grid_cell(indoor_section, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 1, 1);
     lv_obj_set_layout(indoor_section, LV_LAYOUT_GRID);
     lv_obj_set_style_pad_row(indoor_section, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_column(indoor_section, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -405,6 +447,7 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_style_text_font(tview->temp_inside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->temp_inside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->temp_inside_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+    tabview_make_metric_clickable(tview->temp_inside_label, tview);
     lv_obj_t* humidity_icon_indoor = lv_img_create(indoor_section);
     lv_img_set_src(humidity_icon_indoor, &humidity_icon);
     lv_obj_set_grid_cell(humidity_icon_indoor, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
@@ -413,6 +456,7 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_style_text_font(tview->humidity_inside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->humidity_inside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->humidity_inside_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+    tabview_make_metric_clickable(tview->humidity_inside_label, tview);
     lv_obj_t* pressure_icon_indoor = lv_img_create(indoor_section);
     lv_img_set_src(pressure_icon_indoor, &pressure_icon);
     lv_obj_set_grid_cell(pressure_icon_indoor, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 1, 1);
@@ -421,6 +465,7 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_style_text_font(tview->pressure_inside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->pressure_inside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->pressure_inside_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    tabview_make_metric_clickable(tview->pressure_inside_label, tview);
     lv_obj_t* voc_title_label = lv_label_create(indoor_section);
     lv_label_set_text(voc_title_label, "VOC");
     lv_obj_set_style_text_font(voc_title_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -431,6 +476,7 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_style_text_font(tview->voc_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->voc_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->voc_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 1, 1);
+    tabview_make_metric_clickable(tview->voc_label, tview);
     lv_obj_t* co2_icon_obj = lv_img_create(indoor_section);
     lv_img_set_src(co2_icon_obj, &co2);
     lv_obj_set_grid_cell(co2_icon_obj, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 2, 1);
@@ -439,6 +485,7 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_style_text_font(tview->co2_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->co2_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->co2_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+    tabview_make_metric_clickable(tview->co2_label, tview);
     lv_obj_t* iaq_icon_obj = lv_img_create(indoor_section);
     lv_img_set_src(iaq_icon_obj, &aqi);
     lv_obj_set_grid_cell(iaq_icon_obj, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 2, 1);
@@ -447,6 +494,7 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_style_text_font(tview->iaq_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->iaq_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->iaq_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
+    tabview_make_metric_clickable(tview->iaq_label, tview);
 }
 static void tabview_init_test_tab(tabview_t* tview)
 {
@@ -469,18 +517,7 @@ static void tabview_init_test_tab(tabview_t* tview)
     lv_obj_set_grid_dsc_array(section_grid, section_col_dsc, section_row_dsc);
     tabview_init_time_section(tview, section_grid);
     tabview_init_outdoor_section(tview, section_grid);
-    tabview_init_blank_section(tview, section_grid);
     tabview_init_indoor_section(tview, section_grid);
-
-    lv_obj_t* vertical_divider = lv_obj_create(section_grid);
-    lv_obj_remove_style_all(vertical_divider);
-    lv_obj_set_size(vertical_divider, 2, LV_PCT(100));
-    lv_obj_set_style_bg_color(vertical_divider, lv_palette_main(LV_PALETTE_GREY),
-                              LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_bg_opa(vertical_divider, LV_OPA_40, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_border_opa(vertical_divider, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_add_flag(vertical_divider, LV_OBJ_FLAG_IGNORE_LAYOUT);
-    lv_obj_align(vertical_divider, LV_ALIGN_CENTER, 0, 0);
 
     lv_obj_t* horizontal_divider = lv_obj_create(section_grid);
     lv_obj_remove_style_all(horizontal_divider);
@@ -512,6 +549,7 @@ tabview_t* tabview_create(lv_obj_t* parent, int32_t tab_h)
     lv_obj_set_style_pad_top(tview->tab_2, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(tview->tab_2, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
     tabview_init_test_tab(tview);
+    tabview_init_history_tab(tview);
     tview->tab_bar = lv_tabview_get_tab_btns(tview->cont);
     lv_obj_set_style_pad_right(tview->tab_bar, LV_HOR_RES / 2, 0);
     return tview;
