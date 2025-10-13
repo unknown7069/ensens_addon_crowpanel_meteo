@@ -139,7 +139,7 @@ extern "C" void app_main(void)
 
         if (WeatherScreen::instance().updateWeather())
         {
-            vTaskDelay(15000);
+            vTaskDelay(150000); // 2.5 minutes
         }
     }
 }
