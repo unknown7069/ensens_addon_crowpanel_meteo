@@ -29,8 +29,6 @@
 #define TENDENCY_VALUES_MAX_ANGLE 90
 #define TENDENCY_VALUES_STEP_ANGLE (TENDENCY_VALUES_MAX_ANGLE / (TENDENCY_VALUES_NUM - 1))
 
-LV_IMG_DECLARE(settings);
-
 class Dashboard
 {
     static constexpr char TAG[] = "Dashboard";
@@ -49,8 +47,6 @@ class Dashboard
     days_header_t*        days_header_;
     TimeZoneLabel         timeZoneLabel;
     TimeZoneLabel         dateLabel;
-    Button                settingsButton;
-    Image                 configIcon;
     IndoorMetricPlot      bottom_plot_metric_ = IndoorMetricPlot::Temperature;
     uint32_t              current_timestamp_  = 0;
 
@@ -80,15 +76,6 @@ class Dashboard
     static void bottom_plot_source_event_cb(lv_event_t* e);
     bool mapParameterToMetric(EnvironmentalSensor::Parameters param, IndoorMetricPlot& metric) const;
     EnvironmentalSensor::Parameters parameterFromMetric(IndoorMetricPlot metric) const;
-
-    static void configSettingsButtonCallback(lv_event_t* e, void* context)
-    {
-        if (lv_event_get_code(e) == LV_EVENT_CLICKED)
-        {
-            ESP_LOGD(TAG, "settingsButton pressed");
-            WifiScreen::instance().load();
-        }
-    }
 
     Dashboard()                            = default;
     Dashboard(const Dashboard&)            = delete;
@@ -148,20 +135,6 @@ class Dashboard
                     break;
                 }
             }
-        }
-    }
-
-    void settings_button_init()
-    {
-        /* settingsButton */
-        settingsButton.create(cont_);
-        settingsButton.setEventCallback(configSettingsButtonCallback);
-        {
-            // create image.
-            configIcon.create(settingsButton.get());
-            configIcon.scale(0.75f);
-            configIcon.set(&settings);
-            configIcon.align(LV_ALIGN_TOP_RIGHT);
         }
     }
 
@@ -354,7 +327,6 @@ public:
         iaq_box_init();
         co2_box_init();
         voc_box_init();
-        settings_button_init();
 
         days_header_ = days_header_create(cont_);
 
@@ -368,7 +340,7 @@ public:
         lv_chart_set_point_count(pressure_box_->plot.chart, HISTORY_SIZE);
 
         /*Create a MAIN container with grid*/
-        static lv_coord_t col_dsc[] = { 135, 135, 150, 150, 135, 50, LV_GRID_TEMPLATE_LAST };
+        static lv_coord_t col_dsc[] = { 135, 135, 150, 150, 135, LV_GRID_TEMPLATE_LAST };
         static lv_coord_t row_dsc[] = { 60, 70, LV_GRID_CONTENT, LV_GRID_CONTENT,
                                         LV_GRID_TEMPLATE_LAST };
 
@@ -378,8 +350,6 @@ public:
                              0, 1);
         lv_obj_set_grid_cell(iaq_box_->cont, LV_GRID_ALIGN_STRETCH, 4, 1, LV_GRID_ALIGN_STRETCH, 0,
                              2);
-        lv_obj_set_grid_cell(settingsButton.get(), LV_GRID_ALIGN_CENTER, 5, 1,
-                             LV_GRID_ALIGN_STRETCH, 0, 4);
         lv_obj_set_grid_cell(pressure_box_->cont, LV_GRID_ALIGN_STRETCH, 2, 2,
                              LV_GRID_ALIGN_STRETCH, 1, 3);
         lv_obj_set_grid_cell(co2_box_->cont, LV_GRID_ALIGN_STRETCH, 4, 1, LV_GRID_ALIGN_STRETCH, 2,

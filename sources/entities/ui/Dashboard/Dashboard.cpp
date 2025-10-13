@@ -17,7 +17,7 @@ lv_obj_t* Dashboard::create(SensorSettings* sensor_settings, lv_obj_t* parent)
     tv_ = tabview_create(parent, 25);
     create_main_elements(tv_->tab_1);
     WeatherScreen::instance().create(sensor_settings_, tv_);
-    WifiScreen::instance().create(sensor_settings_, lv_obj_create(NULL));
+    WifiScreen::instance().create(sensor_settings_, tv_->tab_settings);
     WifiScreen::instance().loadSettings();
 
     setupBottomPlotSources();

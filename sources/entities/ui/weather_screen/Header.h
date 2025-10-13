@@ -1,17 +1,14 @@
-#include "adapters/lvgl/Button.h"
 #include "adapters/lvgl/FlexContainer.h"
 #include "adapters/lvgl/Image.h"
 #include "entities/ui/weather_screen/elements/LocationLabel.h"
 #include "entities/ui/weather_screen/elements/TimeZoneLabel.h"
 #include "entities/ui/weather_screen/elements/WifiLabel.h"
-#include "entities/ui/wifi_screen/WifiScreen.h"
 #include <esp_log.h>
 
 LV_IMG_DECLARE(wifi_100);
 LV_IMG_DECLARE(wifi_75);
 LV_IMG_DECLARE(wifi_50);
 LV_IMG_DECLARE(wifi_25);
-LV_IMG_DECLARE(settings);
 
 class Header
 {
@@ -22,19 +19,8 @@ class Header
     FlexContainer          header;
     FlexContainer          wifiInfoContainer;
     FlexContainer          locationContainer;
-    FlexContainer          configButtonContainer;
-    Image                  configIcon;
     Image                  wifiIcon;
-    Button                 button;
     static constexpr char* Tag = "Header";
-    static void            configButtonCallback(lv_event_t* e, void* context)
-    {
-        if (lv_event_get_code(e) == LV_EVENT_CLICKED)
-        {
-            ESP_LOGI(Tag, "button pressed");
-            WifiScreen::instance().load();
-        }
-    }
 
 public:
     enum WifiContainerConfig
@@ -76,7 +62,7 @@ public:
             /************************************/
             /** LOCATION CENTRAL LOCATION LABEL */
             /************************************/
-            locationContainer.create(header.get(), lv_pct(80), lv_pct(100), LV_FLEX_FLOW_ROW);
+            locationContainer.create(header.get(), lv_pct(90), lv_pct(100), LV_FLEX_FLOW_ROW);
             lv_obj_clear_flag(locationContainer.get(), LV_OBJ_FLAG_SCROLLABLE);
             locationContainer.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
                                     LV_FLEX_ALIGN_CENTER);
@@ -87,26 +73,6 @@ public:
                 location.create(locationContainer.get(), &lv_font_montserrat_16);
                 timeLabel.create(locationContainer.get(), &lv_font_montserrat_16);
                 dateLabel.create(locationContainer.get(), &lv_font_montserrat_16);
-            }
-
-            /*************************/
-            /** CONFIGURATION BUTTON */
-            /*************************/
-
-            configButtonContainer.create(header.get(), lv_pct(10), LV_SIZE_CONTENT,
-                                         LV_FLEX_FLOW_ROW);
-            configButtonContainer.align(LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_START,
-                                        LV_FLEX_ALIGN_START);
-            configButtonContainer.padding(5, 5);
-            button.create(configButtonContainer.get());
-            button.setEventCallback(configButtonCallback);
-            lv_obj_clear_flag(configButtonContainer.get(), LV_OBJ_FLAG_SCROLLABLE);
-            {
-                // create image.
-                configIcon.create(button.get());
-                configIcon.scale(0.75f);
-                configIcon.set(&settings);
-                configIcon.align(LV_ALIGN_TOP_RIGHT);
             }
         }
     }

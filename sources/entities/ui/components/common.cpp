@@ -238,7 +238,7 @@ static void tabview_init_time_section(tabview_t* tview, lv_obj_t* section_grid)
     lv_obj_set_flex_align(time_section, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     tview->label = lv_label_create(time_section);
     lv_label_set_text(tview->label, "--:--");
-    lv_obj_set_style_text_font(tview->label, &Montserrat_96, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_font(tview->label, &saira_condensed_medium, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_text_align(tview->label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     tabview_make_metric_clickable(tview->label, tview);
     tview->date_label = lv_label_create(time_section);
@@ -548,6 +548,9 @@ tabview_t* tabview_create(lv_obj_t* parent, int32_t tab_h)
     // lv_obj_set_style_pad_right(tview->tab_2, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(tview->tab_2, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(tview->tab_2, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    tview->tab_settings = lv_tabview_add_tab(tview->cont, "Settings");
+    lv_obj_set_style_pad_top(tview->tab_settings, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(tview->tab_settings, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
     tabview_init_test_tab(tview);
     tabview_init_history_tab(tview);
     tview->tab_bar = lv_tabview_get_tab_btns(tview->cont);

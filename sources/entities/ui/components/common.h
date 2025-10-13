@@ -23,7 +23,7 @@ LV_IMG_DECLARE(wind_icon);
 
 LV_IMG_DECLARE(co2);
 LV_IMG_DECLARE(aqi);
-LV_FONT_DECLARE(Montserrat_96);
+LV_FONT_DECLARE(saira_condensed_medium);
 typedef struct {
     lv_obj_t* cont;
     lv_obj_t* int_part;
@@ -82,6 +82,7 @@ typedef struct {
     lv_obj_t* tab_1;
     lv_obj_t* tab_2;
     lv_obj_t* tab_3;
+    lv_obj_t* tab_settings;
     lv_obj_t* tab_history;
     lv_obj_t* tab_bar;
     lv_obj_t* label;

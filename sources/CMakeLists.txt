@@ -1,7 +1,7 @@
 file(GLOB_RECURSE ADAPTERS_SRC "adapters/*.cpp")
 file(GLOB_RECURSE USECASES_SRC "usecases/*.cpp")
 file(GLOB_RECURSE ENTITIES_SRC "entities/*.cpp" "entities/*.c")
-list(APPEND ENTITIES_SRC "${CMAKE_CURRENT_SOURCE_DIR}/entities/ui/fonts/Montserrat_96.c")
+list(APPEND ENTITIES_SRC "${CMAKE_CURRENT_SOURCE_DIR}/entities/ui/fonts/saira_condensed_medium.c")
 list(REMOVE_DUPLICATES ENTITIES_SRC)
 file(GLOB_RECURSE IMAGES_SRC_BASE "images/*.c")
 file(GLOB_RECURSE IMAGES_SRC_DARK  "images/dark_theme/*.c")
