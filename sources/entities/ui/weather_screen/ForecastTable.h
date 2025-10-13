@@ -109,27 +109,26 @@ public:
 
     void set(Weather::Data* forecast)
     {
-        uint8_t idx = 0;
+        static constexpr uint8_t HourlyForecastCount = 4;
+        static constexpr uint8_t DailyStartIndex     = HourlyForecastCount;
         for (uint8_t i = 0; i < ForecastCount; i++)
         {
-            if (!Weather::instance().getNextDayIdx(forecast, &idx))
+            uint8_t dayIdx = DailyStartIndex + i;
+            if (forecast[dayIdx].timestamp == 0)
                 return;
-            // if (i == 0)
-            //     dayNameLabel[i].set("Tomorrow");
-            // else
-            dayNameLabel[i].set(forecast[idx + 4].timestamp);
-            icon[i].set(forecast[idx + 4].icon);
+
+            dayNameLabel[i].set(forecast[dayIdx].timestamp);
+            icon[i].set(forecast[dayIdx].icon);
 
             dayTempLabel[i].setPostfix(unit_names.at(sensor_settings_->temperature));
-            dayTempLabel[i].setParam(convertValueToUnit(sensor_settings_->temperature,
-                                                        forecast[idx + 4].temperature),
-                                     true);
+            dayTempLabel[i].setParam(
+                convertValueToUnit(sensor_settings_->temperature, forecast[dayIdx].tempMax), true);
             nightTempLabel[i].setPostfix(unit_names.at(sensor_settings_->temperature));
-            nightTempLabel[i].setParam(convertValueToUnit(sensor_settings_->temperature,
-                                                          forecast[idx + 8].temperature),
-                                       true);
-            ESP_LOGD(Tag, "[%d]day - %d, night - %d", i, (int)forecast[idx + 8].temperature,
-                     (int)forecast[idx + 8].temperature);
+            nightTempLabel[i].setParam(
+                convertValueToUnit(sensor_settings_->temperature, forecast[dayIdx].tempMin), true);
+
+            ESP_LOGD(Tag, "[%d]day max - %d, night min - %d", i, (int)forecast[dayIdx].tempMax,
+                     (int)forecast[dayIdx].tempMin);
         }
 
         ESP_LOGD(Tag, "container height - %d", lv_obj_get_content_height(objContainer.get()));

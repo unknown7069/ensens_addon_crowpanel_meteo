@@ -15,6 +15,7 @@ class HTTPRequest
     uint32_t                 receivedLen = 0;
     char*                    url         = nullptr;
     esp_http_client_method_t method;
+    const char*              certPem     = nullptr;
     static esp_err_t         httpEventHandler(esp_http_client_event_t* evt)
     {
         HTTPRequest* request = reinterpret_cast<HTTPRequest*>(evt->user_data);
@@ -44,8 +45,10 @@ class HTTPRequest
     }
 
 public:
-    HTTPRequest(char* _url, esp_http_client_method_t _method, char* _buffer, uint32_t _bufferLen)
-        : buffer{ _buffer }, bufferLen{ _bufferLen }, url{ _url }, method{ _method }
+    HTTPRequest(char* _url, esp_http_client_method_t _method, char* _buffer, uint32_t _bufferLen,
+                const char* _certPem = nullptr)
+        : buffer{ _buffer }, bufferLen{ _bufferLen }, url{ _url }, method{ _method },
+          certPem{ _certPem }
     {
         eventGroup = xEventGroupCreate();
     }
@@ -60,9 +63,12 @@ public:
             return false;
 
         esp_err_t                retVal = ESP_OK;
-        esp_http_client_config_t config = {
-            .url = url, .method = method, .event_handler = httpEventHandler, .user_data = this
-        };
+        esp_http_client_config_t config = {};
+        config.url           = url;
+        config.method        = method;
+        config.event_handler = httpEventHandler;
+        config.user_data     = this;
+        config.cert_pem      = certPem;
         receivedLen = 0;
 
         ESP_LOGD(Tag, "starting https request - %s", config.url);

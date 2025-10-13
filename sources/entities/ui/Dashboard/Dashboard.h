@@ -817,7 +817,7 @@ public:
         }
         unlock();
     }
-    void updateTimeLabel(uint32_t timestamp, uint32_t timestampOffset)
+    void updateTimeLabel(uint32_t timestamp, int32_t timestampOffset)
     {
         lock();
 

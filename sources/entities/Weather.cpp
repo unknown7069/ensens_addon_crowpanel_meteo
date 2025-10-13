@@ -1,8 +1,11 @@
 #include "Weather.h"
 #include "adapters/HTTPRequest.h"
+#include "../certs/OpenWeatherCACert.h"
 #include "esp_heap_caps.h"
 #include <esp_log.h>
 #include <json_parser.h>
+#include <ctime>
+#include <limits>
 
 char* urlEncode(const char* input)
 {
@@ -57,12 +60,12 @@ bool Weather::getCurrentWeather(Data* data)
         return false;
     }
 
-    HTTPRequest request(ctx_->requestURL, HTTP_METHOD_POST, ctx_->openWeatherDataBuffer,
-                        sizeof(ctx_->openWeatherDataBuffer));
+    HTTPRequest request(ctx_->requestURL, HTTP_METHOD_GET, ctx_->openWeatherDataBuffer,
+                        sizeof(ctx_->openWeatherDataBuffer), OpenWeatherRootCACert);
 
     jparse_ctx_t jctx;
     int          numCnt = 0;
-    uint32_t     receivedLen;
+    uint32_t     receivedLen = 0;
     bool         retVal = true;
     int64_t      timestamp;
     int64_t      timezone;
@@ -100,11 +103,20 @@ bool Weather::getCurrentWeather(Data* data)
     {
         ESP_LOGD(Tag, "Parsed: %.1f, %.1f, %.1f, %s,", data->temperature, data->humidity,
                  data->pressure, data->description);
-        data->timestamp        = (uint32_t)timestamp + timezone;
-        data->timestampOffset  = (uint32_t)timezone;
-        data->sunriseTimestamp = (uint32_t)sunrise + timezone;
-        data->sunsetTimestamp  = (uint32_t)sunset + timezone;
-        ESP_LOGI(Tag, "%lu, %lu, %s, %s", data->timestamp, data->timestampOffset, data->city,
+        auto clampToUint32 = [](int64_t value) -> uint32_t {
+            if (value < 0)
+                return 0;
+            if (value > std::numeric_limits<uint32_t>::max())
+                return std::numeric_limits<uint32_t>::max();
+            return static_cast<uint32_t>(value);
+        };
+
+        data->timestamp        = clampToUint32(timestamp + timezone);
+        data->timestampOffset  = static_cast<int32_t>(timezone);
+        data->sunriseTimestamp = clampToUint32(sunrise + timezone);
+        data->sunsetTimestamp  = clampToUint32(sunset + timezone);
+        ESP_LOGI(Tag, "%lu, %ld, %s, %s", data->timestamp,
+                 static_cast<long>(data->timestampOffset), data->city,
                  data->country);
     } else
     {
@@ -112,6 +124,25 @@ bool Weather::getCurrentWeather(Data* data)
         retVal = false;
     }
     json_parse_end(&jctx);
+
+    if (retVal && (receivedLen > 0) &&
+        ((ctx_->latitude[0] == '\0') || (ctx_->longitude[0] == '\0')))
+    {
+        float        coordLat  = 0.0f;
+        float        coordLon  = 0.0f;
+        jparse_ctx_t coordCtx  = { 0 };
+        if ((json_parse_start(&coordCtx, ctx_->openWeatherDataBuffer, receivedLen) == OS_SUCCESS) &&
+            (json_obj_get_object(&coordCtx, "coord") == OS_SUCCESS) &&
+            (json_obj_get_float(&coordCtx, "lon", &coordLon) == OS_SUCCESS) &&
+            (json_obj_get_float(&coordCtx, "lat", &coordLat) == OS_SUCCESS) &&
+            (json_obj_leave_object(&coordCtx) == OS_SUCCESS))
+        {
+            snprintf(ctx_->latitude, sizeof(ctx_->latitude), "%.4f", coordLat);
+            snprintf(ctx_->longitude, sizeof(ctx_->longitude), "%.4f", coordLon);
+        }
+        json_parse_end(&coordCtx);
+    }
+
     memset(ctx_->openWeatherDataBuffer, 0, sizeof(ctx_->openWeatherDataBuffer));
     data->temperature -= 273.15f;
     data->feelsLike -= 273.15f;
@@ -119,15 +150,23 @@ bool Weather::getCurrentWeather(Data* data)
     data->tempMax -= 273.15f;
     return retVal;
 }
+
 bool Weather::getForecast(Data* data)
 {
     if (!data)
         return false;
 
+    static constexpr uint8_t ForecastEntryCount  = 40;
+    static constexpr uint8_t HourlyForecastCount = 4;
+    static constexpr uint8_t DailyForecastCount  = 4;
+    static constexpr uint8_t DailyStartIndex     = HourlyForecastCount;
+    memset(data, 0, sizeof(Data) * ForecastEntryCount);
+
     if ((ctx_->latitude[0] != '\0') && (ctx_->longitude[0] != '\0'))
+    {
         snprintf(ctx_->requestURL, sizeof(ctx_->requestURL), "%slat=%s&lon=%s&appid=%s",
                  FORECAST_URL, ctx_->latitude, ctx_->longitude, WEATHER_API_KEY);
-    else if (ctx_->locationName[0] != '0')
+    } else if (ctx_->locationName[0] != '\0')
     {
         char* encodedCity = urlEncode(ctx_->locationName);
         if (!encodedCity)
@@ -142,71 +181,182 @@ bool Weather::getForecast(Data* data)
         return false;
     }
 
-    HTTPRequest request(ctx_->requestURL, HTTP_METHOD_POST, ctx_->openWeatherDataBuffer,
-                        sizeof(ctx_->openWeatherDataBuffer));
+    HTTPRequest request(ctx_->requestURL, HTTP_METHOD_GET, ctx_->openWeatherDataBuffer,
+                        sizeof(ctx_->openWeatherDataBuffer), OpenWeatherRootCACert);
 
     jparse_ctx_t jctx;
-    int          numCnt = 0;
-    int          unused = 0;
-    uint32_t     receivedLen;
-    bool         retVal = true;
-    int64_t      timestamp;
-    int64_t      timezone;
+    int          listCount   = 0;
+    int          weatherCnt  = 0;
+    uint32_t     receivedLen = 0;
+    bool         retVal      = true;
+    int64_t      timestamp   = 0;
+    int64_t      timezone    = 0;
+
     if (((receivedLen = request.perform()) > 0) &&
         (json_parse_start(&jctx, ctx_->openWeatherDataBuffer, receivedLen) == OS_SUCCESS) &&
-        (json_obj_get_array(&jctx, "list", &numCnt) == OS_SUCCESS))
+        (json_obj_get_array(&jctx, "list", &listCount) == OS_SUCCESS))
     {
-        for (uint8_t i = 0; i < 40; i++)
+        const int maxEntries = (listCount < ForecastEntryCount) ? listCount : ForecastEntryCount;
+        for (int i = 0; (i < maxEntries) && retVal; i++)
         {
-            if ((json_arr_get_object(&jctx, i) == OS_SUCCESS) && // array i START
+            if ((json_arr_get_object(&jctx, i) == OS_SUCCESS) &&
                 (json_obj_get_int64(&jctx, "dt", &timestamp) == OS_SUCCESS) &&
-                (json_obj_get_object(&jctx, "main") == OS_SUCCESS) && // main START
+                (json_obj_get_object(&jctx, "main") == OS_SUCCESS) &&
                 (json_obj_get_float(&jctx, "temp", &data[i].temperature) == OS_SUCCESS) &&
-                (json_obj_leave_object(&jctx) == OS_SUCCESS) &&                  // main END
-                (json_obj_get_array(&jctx, "weather", &unused) == OS_SUCCESS) && // weather array
-                                                                                 // START
-                (json_arr_get_object(&jctx, 0) == OS_SUCCESS) && // weather array END
-                (json_obj_get_string(&jctx, "icon", data[i].icon, 64) == OS_SUCCESS) &&
-                (json_arr_leave_object(&jctx) == OS_SUCCESS) && // weather 0 END
-                (json_obj_leave_array(&jctx) == OS_SUCCESS) &&  // weather array END
-                (json_arr_leave_object(&jctx) == OS_SUCCESS)    /// array i END
-            )
+                (json_obj_get_float(&jctx, "temp_min", &data[i].tempMin) == OS_SUCCESS) &&
+                (json_obj_get_float(&jctx, "temp_max", &data[i].tempMax) == OS_SUCCESS) &&
+                (json_obj_leave_object(&jctx) == OS_SUCCESS) &&
+                (json_obj_get_array(&jctx, "weather", &weatherCnt) == OS_SUCCESS) &&
+                (json_arr_get_object(&jctx, 0) == OS_SUCCESS) &&
+                (json_obj_get_string(&jctx, "icon", data[i].icon, sizeof(data[i].icon)) ==
+                 OS_SUCCESS) &&
+                (json_arr_leave_object(&jctx) == OS_SUCCESS) &&
+                (json_obj_leave_array(&jctx) == OS_SUCCESS) &&
+                (json_arr_leave_object(&jctx) == OS_SUCCESS))
             {
-                data[i].timestamp = (uint32_t)timestamp;
-                data[i].temperature -= 273.15f;
+                data[i].timestamp = static_cast<uint32_t>(timestamp);
             } else
             {
-                ESP_LOGE(Tag, "Parser failed: objects");
+                ESP_LOGE(Tag, "Parser failed: forecast list entry");
                 retVal = false;
             }
         }
     } else
     {
-        ESP_LOGE(Tag, "Parser failed: objects");
+        ESP_LOGE(Tag, "Parser failed: forecast list");
         retVal = false;
     }
 
-    if (retVal && (json_obj_leave_array(&jctx) == OS_SUCCESS) && // list END
-        (json_obj_get_object(&jctx, "city") == OS_SUCCESS) &&    // city START
-        (json_obj_get_int64(&jctx, "timezone", &timezone) == OS_SUCCESS) &&
-        (json_obj_leave_object(&jctx) == OS_SUCCESS) // city END
-    )
-        for (uint8_t i = 0; i < 4; i++)
-            data[i].timestamp += timezone;
-
-    json_parse_end(&jctx);
-    memset(ctx_->openWeatherDataBuffer, 0, sizeof(ctx_->openWeatherDataBuffer));
-
-    uint8_t idx = 0;
-    while (getNextDayIdx(data, &idx) == true)
+    if (retVal &&
+        (json_obj_leave_array(&jctx) == OS_SUCCESS) &&
+        (json_obj_get_object(&jctx, "city") == OS_SUCCESS) &&
+        (json_obj_get_int64(&jctx, "timezone", &timezone) == OS_SUCCESS))
     {
-        char       text[20];
-        time_t     timestampStruct = data[idx].timestamp;
-        struct tm* timeInfo        = localtime(&timestampStruct);
-        strftime(text, sizeof(text), "%d.%m.%y", timeInfo);
+        float coordLat = 0.0f;
+        float coordLon = 0.0f;
+        if ((json_obj_get_object(&jctx, "coord") == OS_SUCCESS) &&
+            (json_obj_get_float(&jctx, "lat", &coordLat) == OS_SUCCESS) &&
+            (json_obj_get_float(&jctx, "lon", &coordLon) == OS_SUCCESS) &&
+            (json_obj_leave_object(&jctx) == OS_SUCCESS))
+        {
+            snprintf(ctx_->latitude, sizeof(ctx_->latitude), "%.4f", coordLat);
+            snprintf(ctx_->longitude, sizeof(ctx_->longitude), "%.4f", coordLon);
+        }
+        retVal &= (json_obj_leave_object(&jctx) == OS_SUCCESS);
+    } else
+    {
+        ESP_LOGE(Tag, "Parser failed: city metadata");
+        retVal = false;
     }
 
-    return retVal;
+    json_parse_end(&jctx);
+
+    if (!retVal)
+    {
+        memset(ctx_->openWeatherDataBuffer, 0, sizeof(ctx_->openWeatherDataBuffer));
+        return false;
+    }
+
+    for (int i = 0; i < ForecastEntryCount; i++)
+    {
+        if (data[i].timestamp == 0)
+            break;
+        int64_t adjustedTs = static_cast<int64_t>(data[i].timestamp) + timezone;
+        if (adjustedTs < 0)
+            adjustedTs = 0;
+        data[i].timestamp = static_cast<uint32_t>(adjustedTs);
+        data[i].temperature -= 273.15f;
+        data[i].tempMin -= 273.15f;
+        data[i].tempMax -= 273.15f;
+    }
+
+    struct DailyAggregate {
+        int      year      = -1;
+        int      yday      = -1;
+        float    minTemp   = 0.0f;
+        float    maxTemp   = 0.0f;
+        uint32_t timestamp = 0;
+        int      hourDelta = 24;
+        char     icon[sizeof(data[0].icon)] = {};
+        bool     assigned  = false;
+    };
+
+    DailyAggregate daily[DailyForecastCount];
+    int            dailyCount = 0;
+
+    time_t   utcNow    = time(nullptr);
+    time_t   localNow  = utcNow + timezone;
+    struct tm localNowTm;
+    gmtime_r(&localNow, &localNowTm);
+    int referenceYear = localNowTm.tm_year;
+    int referenceYDay = localNowTm.tm_yday;
+
+    for (int i = 0; i < ForecastEntryCount; i++)
+    {
+        if (data[i].timestamp == 0)
+            break;
+
+        time_t    t   = data[i].timestamp;
+        struct tm tmv;
+        gmtime_r(&t, &tmv);
+
+        if (tmv.tm_year < referenceYear ||
+            (tmv.tm_year == referenceYear && tmv.tm_yday <= referenceYDay))
+            continue;
+
+        int target = -1;
+        for (int j = 0; j < dailyCount; j++)
+        {
+            if (daily[j].yday == tmv.tm_yday && daily[j].year == tmv.tm_year)
+            {
+                target = j;
+                break;
+            }
+        }
+
+        if (target == -1)
+        {
+            if (dailyCount >= DailyForecastCount)
+                continue;
+            target                  = dailyCount++;
+            daily[target].year      = tmv.tm_year;
+            daily[target].yday      = tmv.tm_yday;
+            daily[target].minTemp   = data[i].tempMin;
+            daily[target].maxTemp   = data[i].tempMax;
+            daily[target].timestamp = data[i].timestamp;
+            daily[target].hourDelta =
+                (tmv.tm_hour > 12) ? (tmv.tm_hour - 12) : (12 - tmv.tm_hour);
+            strncpy(daily[target].icon, data[i].icon, sizeof(daily[target].icon));
+            daily[target].assigned = true;
+            continue;
+        }
+
+        if (!daily[target].assigned || data[i].tempMin < daily[target].minTemp)
+            daily[target].minTemp = data[i].tempMin;
+        if (data[i].tempMax > daily[target].maxTemp)
+            daily[target].maxTemp = data[i].tempMax;
+
+        int currentDelta = (tmv.tm_hour > 12) ? (tmv.tm_hour - 12) : (12 - tmv.tm_hour);
+        if (currentDelta < daily[target].hourDelta)
+        {
+            daily[target].hourDelta = currentDelta;
+            daily[target].timestamp = data[i].timestamp;
+            strncpy(daily[target].icon, data[i].icon, sizeof(daily[target].icon));
+        }
+    }
+
+    for (int i = 0; i < dailyCount; i++)
+    {
+        uint8_t idx        = DailyStartIndex + static_cast<uint8_t>(i);
+        data[idx].timestamp = daily[i].timestamp;
+        data[idx].tempMin   = daily[i].minTemp;
+        data[idx].tempMax   = daily[i].maxTemp;
+        data[idx].temperature = (daily[i].minTemp + daily[i].maxTemp) * 0.5f;
+        strncpy(data[idx].icon, daily[i].icon, sizeof(daily[i].icon));
+    }
+
+    memset(ctx_->openWeatherDataBuffer, 0, sizeof(ctx_->openWeatherDataBuffer));
+    return (data[0].timestamp != 0) && (data[DailyStartIndex].timestamp != 0);
 }
 
 bool Weather::getNextDayIdx(Data* data, uint8_t* curIdx)
@@ -274,7 +424,8 @@ bool Weather::checkLocation(char* name)
              WEATHER_API_KEY);
     free(encodedCity);
 
-    HTTPRequest request(requestBuffer, HTTP_METHOD_POST, responseBuffer, ResponseBufferSize);
+    HTTPRequest request(requestBuffer, HTTP_METHOD_POST, responseBuffer, ResponseBufferSize,
+                        OpenWeatherRootCACert);
 
     jparse_ctx_t jctx;
     uint32_t     receivedLen;
@@ -294,3 +445,4 @@ bool Weather::checkLocation(char* name)
     free(responseBuffer);
     return retVal;
 }
+

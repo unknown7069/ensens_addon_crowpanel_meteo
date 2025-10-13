@@ -4,13 +4,13 @@
 
 #define WEATHER_API_KEY "b4d1299a4d4bb3e2ed262199a1c61cae"
 //#define WEATHER_URL
-//"http://api.openweathermap.org/data/2.5/weather?q=Kazan&appid="
+//"https://api.openweathermap.org/data/2.5/weather?q=Kazan&appid="
 // WEATHER_API_KEY
-#define WEATHER_URL "http://api.openweathermap.org/data/2.5/weather?"
+#define WEATHER_URL "https://api.openweathermap.org/data/2.5/weather?"
 //#define FORECAST_URL
 //"http://api.openweathermap.org/data/2.5/forecast?q=Kazan&appid="
 // WEATHER_API_KEY
-#define FORECAST_URL "http://api.openweathermap.org/data/2.5/forecast?"
+#define FORECAST_URL "https://api.openweathermap.org/data/2.5/forecast?"
 
 class Weather
 {
@@ -45,7 +45,7 @@ public:
         char     city[64];
         char     country[64];
         uint32_t timestamp;
-        uint32_t timestampOffset;
+        int32_t  timestampOffset;
         char     icon[64];
         float    windSpeed;
         float    windDir;
