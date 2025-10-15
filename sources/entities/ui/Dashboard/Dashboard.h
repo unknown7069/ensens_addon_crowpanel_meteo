@@ -540,6 +540,22 @@ public:
         unlock();
     }
 
+    void updateOutsidePrecipitation(float value)
+    {
+        lock();
+        if (tv_ && tv_->precipitation_outside_label)
+        {
+            if (std::isnan(value))
+            {
+                lv_label_set_text(tv_->precipitation_outside_label, "-- mm");
+            } else
+            {
+                lv_label_set_text_fmt(tv_->precipitation_outside_label, "%.1f mm", value);
+            }
+        }
+        unlock();
+    }
+
     void updateHumidity(const std::string& dev_name, const float value)
     {
         lock();

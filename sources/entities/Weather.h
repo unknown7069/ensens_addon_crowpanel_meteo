@@ -22,6 +22,7 @@ class Weather
         char latitude[20];
         char requestURL[RequestBufferSize];
         char locationName[150];
+        float next24hPrecipitation;
     } * ctx_;
 
     Weather();
@@ -52,6 +53,7 @@ public:
         float    pressure;
         uint32_t sunriseTimestamp;
         uint32_t sunsetTimestamp;
+        float    precipitation;
     };
 
     bool getCurrentWeather(Data* data);
@@ -63,4 +65,6 @@ public:
     void setLocation(char* lat, char* lon, char* name);
 
     bool checkLocation(char* name);
+
+    float getNext24hPrecipitation() const;
 };

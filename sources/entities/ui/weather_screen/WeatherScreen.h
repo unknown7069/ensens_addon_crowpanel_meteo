@@ -112,6 +112,8 @@ public:
     {
         ui->todayForecastTable.setForecast(forecast);
         ui->forecastTable.set(forecast);
+        Dashboard::instance().updateOutsidePrecipitation(
+            Weather::instance().getNext24hPrecipitation());
     }
 
     void setSSID(char* newSSID)

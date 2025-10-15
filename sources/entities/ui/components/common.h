@@ -81,7 +81,7 @@ typedef struct {
     lv_obj_t* cont;
     lv_obj_t* tab_1;
     lv_obj_t* tab_2;
-    lv_obj_t* tab_3;
+    lv_obj_t* tab_dashboard;
     lv_obj_t* tab_settings;
     lv_obj_t* tab_history;
     lv_obj_t* tab_bar;
@@ -96,6 +96,7 @@ typedef struct {
     lv_obj_t* feels_like_label;
     lv_obj_t* daily_high_label;
     lv_obj_t* daily_low_label;
+    lv_obj_t* precipitation_outside_label;
     lv_obj_t* voc_label;
     lv_obj_t* co2_label;
     lv_obj_t* iaq_label;

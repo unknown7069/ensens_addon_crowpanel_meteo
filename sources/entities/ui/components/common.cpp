@@ -249,8 +249,8 @@ static void tabview_init_time_section(tabview_t* tview, lv_obj_t* section_grid)
 }
 static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_grid)
 {
-    lv_obj_t* outdoor_section = tabview_create_section(section_grid, 1, 0);
-    lv_obj_set_grid_cell(outdoor_section, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
+    lv_obj_t* outdoor_section = tabview_create_section(section_grid, 0, 1);
+    lv_obj_set_grid_cell(outdoor_section, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 1, 1);
     lv_obj_set_layout(outdoor_section, LV_LAYOUT_GRID);
     lv_obj_set_style_pad_row(outdoor_section, 6, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_column(outdoor_section, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -258,7 +258,7 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
     static lv_coord_t outdoor_col_dsc[] = { LV_GRID_CONTENT, LV_GRID_FR(1), LV_GRID_CONTENT, LV_GRID_FR(1),
                                             LV_GRID_TEMPLATE_LAST };
     static lv_coord_t outdoor_row_dsc[] = { LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_CONTENT, LV_GRID_CONTENT,
-                                            LV_GRID_TEMPLATE_LAST };
+                                            LV_GRID_CONTENT, LV_GRID_TEMPLATE_LAST };
     lv_obj_set_grid_dsc_array(outdoor_section, outdoor_col_dsc, outdoor_row_dsc);
 
     lv_obj_t* temperature_icon_obj = lv_img_create(outdoor_section);
@@ -340,6 +340,18 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
     lv_obj_set_style_text_align(tview->daily_low_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(tview->daily_low_label, LV_GRID_ALIGN_CENTER, 1, 1, LV_GRID_ALIGN_CENTER, 3, 1);
     tabview_make_metric_clickable(tview->daily_low_label, tview);
+
+    lv_obj_t* precipitation_icon = lv_label_create(outdoor_section);
+    lv_label_set_text(precipitation_icon, "Rain 24h");
+    lv_obj_set_style_text_font(precipitation_icon, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(precipitation_icon, LV_GRID_ALIGN_CENTER, 0, 1, LV_GRID_ALIGN_CENTER, 4, 1);
+
+    tview->precipitation_outside_label = lv_label_create(outdoor_section);
+    lv_label_set_text(tview->precipitation_outside_label, "-- mm");
+    lv_obj_set_style_text_font(tview->precipitation_outside_label, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_text_align(tview->precipitation_outside_label, LV_TEXT_ALIGN_CENTER, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_grid_cell(tview->precipitation_outside_label, LV_GRID_ALIGN_CENTER, 1, 3, LV_GRID_ALIGN_CENTER, 4, 1);
+    tabview_make_metric_clickable(tview->precipitation_outside_label, tview);
 }
 
 static void tabview_init_history_tab(tabview_t* tview)
@@ -431,8 +443,8 @@ static void tabview_init_history_tab(tabview_t* tview)
 }
 static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid)
 {
-    lv_obj_t* indoor_section = tabview_create_section(section_grid, 0, 1);
-    lv_obj_set_grid_cell(indoor_section, LV_GRID_ALIGN_STRETCH, 0, 2, LV_GRID_ALIGN_CENTER, 1, 1);
+    lv_obj_t* indoor_section = tabview_create_section(section_grid, 1, 0);
+    lv_obj_set_grid_cell(indoor_section, LV_GRID_ALIGN_STRETCH, 1, 1, LV_GRID_ALIGN_CENTER, 0, 1);
     lv_obj_set_layout(indoor_section, LV_LAYOUT_GRID);
     lv_obj_set_style_pad_row(indoor_section, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_column(indoor_section, 12, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -496,14 +508,14 @@ static void tabview_init_indoor_section(tabview_t* tview, lv_obj_t* section_grid
     lv_obj_set_grid_cell(tview->iaq_label, LV_GRID_ALIGN_CENTER, 3, 1, LV_GRID_ALIGN_CENTER, 2, 1);
     tabview_make_metric_clickable(tview->iaq_label, tview);
 }
-static void tabview_init_test_tab(tabview_t* tview)
+static void tabview_init_dashboard_tab(tabview_t* tview)
 {
     if (tview == nullptr)
         return;
-    tview->tab_3 = lv_tabview_add_tab(tview->cont, "Test");
-    lv_obj_set_style_pad_top(tview->tab_3, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(tview->tab_3, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_t* section_grid = lv_obj_create(tview->tab_3);
+    tview->tab_dashboard = lv_tabview_add_tab(tview->cont, "Dashboard");
+    lv_obj_set_style_pad_top(tview->tab_dashboard, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(tview->tab_dashboard, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_t* section_grid = lv_obj_create(tview->tab_dashboard);
     lv_obj_set_size(section_grid, LV_PCT(100), LV_PCT(100));
     lv_obj_clear_flag(section_grid, LV_OBJ_FLAG_SCROLLABLE);
     lv_obj_set_layout(section_grid, LV_LAYOUT_GRID);
@@ -536,6 +548,11 @@ tabview_t* tabview_create(lv_obj_t* parent, int32_t tab_h)
     tview->tab_h  = tab_h;
     tview->parent = parent;
     tview->cont   = lv_tabview_create(parent, LV_DIR_TOP, tview->tab_h);
+    tabview_init_dashboard_tab(tview);
+    tabview_init_history_tab(tview);
+    tview->tab_settings = lv_tabview_add_tab(tview->cont, "Settings");
+    lv_obj_set_style_pad_top(tview->tab_settings, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_pad_bottom(tview->tab_settings, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
     tview->tab_1 = lv_tabview_add_tab(tview->cont, "Indoor");
     /* Remove tab button area padding */
     lv_obj_set_style_pad_left(tview->tab_1, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -548,11 +565,6 @@ tabview_t* tabview_create(lv_obj_t* parent, int32_t tab_h)
     // lv_obj_set_style_pad_right(tview->tab_2, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(tview->tab_2, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(tview->tab_2, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
-    tview->tab_settings = lv_tabview_add_tab(tview->cont, "Settings");
-    lv_obj_set_style_pad_top(tview->tab_settings, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(tview->tab_settings, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
-    tabview_init_test_tab(tview);
-    tabview_init_history_tab(tview);
     tview->tab_bar = lv_tabview_get_tab_btns(tview->cont);
     lv_obj_set_style_pad_right(tview->tab_bar, LV_HOR_RES / 2, 0);
     return tview;

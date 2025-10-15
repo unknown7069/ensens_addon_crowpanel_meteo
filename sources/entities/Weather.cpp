@@ -6,6 +6,8 @@
 #include <json_parser.h>
 #include <ctime>
 #include <limits>
+#include <cstring>
+#include <algorithm>
 
 char* urlEncode(const char* input)
 {
@@ -35,12 +37,19 @@ char* urlEncode(const char* input)
 Weather::Weather()
 {
     ctx_ = static_cast<Ctx*>(heap_caps_malloc(sizeof(Ctx), MALLOC_CAP_SPIRAM));
+    if (ctx_ != nullptr)
+    {
+        memset(ctx_, 0, sizeof(Ctx));
+        ctx_->next24hPrecipitation = std::numeric_limits<float>::quiet_NaN();
+    }
 }
 
 bool Weather::getCurrentWeather(Data* data)
 {
     if (!data)
         return false;
+
+    data->precipitation = std::numeric_limits<float>::quiet_NaN();
 
     if ((ctx_->latitude[0] != '\0') && (ctx_->longitude[0] != '\0'))
         snprintf(ctx_->requestURL, sizeof(ctx_->requestURL), "%slat=%s&lon=%s&appid=%s",
@@ -118,6 +127,33 @@ bool Weather::getCurrentWeather(Data* data)
         ESP_LOGI(Tag, "%lu, %ld, %s, %s", data->timestamp,
                  static_cast<long>(data->timestampOffset), data->city,
                  data->country);
+
+        float precipitation = 0.0f;
+        bool  precipFound   = false;
+        if (json_obj_get_object(&jctx, "rain") == OS_SUCCESS)
+        {
+            float rainVal = 0.0f;
+            if ((json_obj_get_float(&jctx, "1h", &rainVal) == OS_SUCCESS) ||
+                (json_obj_get_float(&jctx, "3h", &rainVal) == OS_SUCCESS))
+            {
+                precipitation += rainVal;
+                precipFound = true;
+            }
+            json_obj_leave_object(&jctx);
+        }
+        if (json_obj_get_object(&jctx, "snow") == OS_SUCCESS)
+        {
+            float snowVal = 0.0f;
+            if ((json_obj_get_float(&jctx, "1h", &snowVal) == OS_SUCCESS) ||
+                (json_obj_get_float(&jctx, "3h", &snowVal) == OS_SUCCESS))
+            {
+                precipitation += snowVal;
+                precipFound = true;
+            }
+            json_obj_leave_object(&jctx);
+        }
+
+        data->precipitation = precipFound ? precipitation : 0.0f;
     } else
     {
         ESP_LOGE(Tag, "Parser failed: objects");
@@ -155,6 +191,9 @@ bool Weather::getForecast(Data* data)
 {
     if (!data)
         return false;
+
+    if (ctx_)
+        ctx_->next24hPrecipitation = std::numeric_limits<float>::quiet_NaN();
 
     static constexpr uint8_t ForecastEntryCount  = 40;
     static constexpr uint8_t HourlyForecastCount = 4;
@@ -199,25 +238,69 @@ bool Weather::getForecast(Data* data)
         const int maxEntries = (listCount < ForecastEntryCount) ? listCount : ForecastEntryCount;
         for (int i = 0; (i < maxEntries) && retVal; i++)
         {
-            if ((json_arr_get_object(&jctx, i) == OS_SUCCESS) &&
-                (json_obj_get_int64(&jctx, "dt", &timestamp) == OS_SUCCESS) &&
-                (json_obj_get_object(&jctx, "main") == OS_SUCCESS) &&
-                (json_obj_get_float(&jctx, "temp", &data[i].temperature) == OS_SUCCESS) &&
-                (json_obj_get_float(&jctx, "temp_min", &data[i].tempMin) == OS_SUCCESS) &&
-                (json_obj_get_float(&jctx, "temp_max", &data[i].tempMax) == OS_SUCCESS) &&
-                (json_obj_leave_object(&jctx) == OS_SUCCESS) &&
-                (json_obj_get_array(&jctx, "weather", &weatherCnt) == OS_SUCCESS) &&
-                (json_arr_get_object(&jctx, 0) == OS_SUCCESS) &&
-                (json_obj_get_string(&jctx, "icon", data[i].icon, sizeof(data[i].icon)) ==
-                 OS_SUCCESS) &&
-                (json_arr_leave_object(&jctx) == OS_SUCCESS) &&
-                (json_obj_leave_array(&jctx) == OS_SUCCESS) &&
-                (json_arr_leave_object(&jctx) == OS_SUCCESS))
+            if (json_arr_get_object(&jctx, i) != OS_SUCCESS)
             {
-                data[i].timestamp = static_cast<uint32_t>(timestamp);
+                ESP_LOGE(Tag, "Parser failed: forecast list entry");
+                retVal = false;
+                break;
+            }
+
+            int64_t entryTimestamp = 0;
+            bool    entryOk        = true;
+
+            entryOk &= (json_obj_get_int64(&jctx, "dt", &entryTimestamp) == OS_SUCCESS);
+            entryOk &= (json_obj_get_object(&jctx, "main") == OS_SUCCESS);
+            entryOk &= (json_obj_get_float(&jctx, "temp", &data[i].temperature) == OS_SUCCESS);
+            entryOk &= (json_obj_get_float(&jctx, "temp_min", &data[i].tempMin) == OS_SUCCESS);
+            entryOk &= (json_obj_get_float(&jctx, "temp_max", &data[i].tempMax) == OS_SUCCESS);
+            entryOk &= (json_obj_leave_object(&jctx) == OS_SUCCESS);
+            entryOk &= (json_obj_get_array(&jctx, "weather", &weatherCnt) == OS_SUCCESS);
+            entryOk &= (json_arr_get_object(&jctx, 0) == OS_SUCCESS);
+            entryOk &= (json_obj_get_string(&jctx, "icon", data[i].icon, sizeof(data[i].icon)) ==
+                        OS_SUCCESS);
+            entryOk &= (json_arr_leave_object(&jctx) == OS_SUCCESS);
+            entryOk &= (json_obj_leave_array(&jctx) == OS_SUCCESS);
+
+            if (entryOk)
+            {
+                float precipitation = 0.0f;
+                bool  precipFound   = false;
+
+                if (json_obj_get_object(&jctx, "rain") == OS_SUCCESS)
+                {
+                    float rainVal = 0.0f;
+                    if ((json_obj_get_float(&jctx, "3h", &rainVal) == OS_SUCCESS) ||
+                        (json_obj_get_float(&jctx, "1h", &rainVal) == OS_SUCCESS))
+                    {
+                        precipitation += rainVal;
+                        precipFound = true;
+                    }
+                    json_obj_leave_object(&jctx);
+                }
+
+                if (json_obj_get_object(&jctx, "snow") == OS_SUCCESS)
+                {
+                    float snowVal = 0.0f;
+                    if ((json_obj_get_float(&jctx, "3h", &snowVal) == OS_SUCCESS) ||
+                        (json_obj_get_float(&jctx, "1h", &snowVal) == OS_SUCCESS))
+                    {
+                        precipitation += snowVal;
+                        precipFound = true;
+                    }
+                    json_obj_leave_object(&jctx);
+                }
+
+                data[i].precipitation = precipFound ? precipitation : 0.0f;
+                data[i].timestamp     = static_cast<uint32_t>(entryTimestamp);
             } else
             {
                 ESP_LOGE(Tag, "Parser failed: forecast list entry");
+                retVal = false;
+            }
+
+            if (json_arr_leave_object(&jctx) != OS_SUCCESS)
+            {
+                ESP_LOGE(Tag, "Parser failed: leave forecast entry");
                 retVal = false;
             }
         }
@@ -270,6 +353,32 @@ bool Weather::getForecast(Data* data)
         data[i].tempMax -= 273.15f;
     }
 
+    if (ctx_)
+    {
+        int64_t localNow = static_cast<int64_t>(time(nullptr)) + timezone;
+        localNow         = std::max<int64_t>(0, localNow);
+        int64_t windowEnd = localNow + 24 * 3600;
+        float   totalPrecipitation = 0.0f;
+        bool    precipWindowFound  = false;
+
+        for (int i = 0; i < ForecastEntryCount; ++i)
+        {
+            if (data[i].timestamp == 0)
+                break;
+            int64_t entryTs = static_cast<int64_t>(data[i].timestamp);
+            if (entryTs < localNow)
+                continue;
+            if (entryTs > windowEnd)
+                break;
+
+            totalPrecipitation += data[i].precipitation;
+            precipWindowFound = true;
+        }
+
+        if (precipWindowFound)
+            ctx_->next24hPrecipitation = totalPrecipitation;
+    }
+
     struct DailyAggregate {
         int      year      = -1;
         int      yday      = -1;
@@ -278,7 +387,8 @@ bool Weather::getForecast(Data* data)
         uint32_t timestamp = 0;
         int      hourDelta = 24;
         char     icon[sizeof(data[0].icon)] = {};
-        bool     assigned  = false;
+        float    precipitationTotal = 0.0f;
+        bool     assigned           = false;
     };
 
     DailyAggregate daily[DailyForecastCount];
@@ -327,9 +437,12 @@ bool Weather::getForecast(Data* data)
             daily[target].hourDelta =
                 (tmv.tm_hour > 12) ? (tmv.tm_hour - 12) : (12 - tmv.tm_hour);
             strncpy(daily[target].icon, data[i].icon, sizeof(daily[target].icon));
+            daily[target].precipitationTotal = data[i].precipitation;
             daily[target].assigned = true;
             continue;
         }
+
+        daily[target].precipitationTotal += data[i].precipitation;
 
         if (!daily[target].assigned || data[i].tempMin < daily[target].minTemp)
             daily[target].minTemp = data[i].tempMin;
@@ -352,6 +465,7 @@ bool Weather::getForecast(Data* data)
         data[idx].tempMin   = daily[i].minTemp;
         data[idx].tempMax   = daily[i].maxTemp;
         data[idx].temperature = (daily[i].minTemp + daily[i].maxTemp) * 0.5f;
+        data[idx].precipitation = daily[i].precipitationTotal;
         strncpy(data[idx].icon, daily[i].icon, sizeof(daily[i].icon));
     }
 
@@ -446,3 +560,9 @@ bool Weather::checkLocation(char* name)
     return retVal;
 }
 
+float Weather::getNext24hPrecipitation() const
+{
+    if (!ctx_)
+        return std::numeric_limits<float>::quiet_NaN();
+    return ctx_->next24hPrecipitation;
+}
