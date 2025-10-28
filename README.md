@@ -26,6 +26,15 @@
  3.Into VSCode:
  - click "Build, Flash and Monitor".
 
+### Quick build check from CLI
+
+To verify that the project still builds without opening VSCode, run:
+
+```powershell
+pwsh -ExecutionPolicy Bypass -File scripts/test_build.ps1
+```
+
+Add `-Clean` if you need to start from a pristine `idf.py fullclean` before building.
 
 
 # Indoor Screen for Meteo project
