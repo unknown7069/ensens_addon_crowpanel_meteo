@@ -5,6 +5,7 @@
 #include "CurrentTime.h"
 #include "esp_heap_caps.h"
 #include "entities/Brightness.h"
+#include <limits>
 #ifdef COMMON_DEMO_APP
 #include "entities/ui/components/common.h"
 #include "entities/ui/weather_screen/CurrentWeatherBody.h"
@@ -96,8 +97,6 @@ public:
         Dashboard::instance().updateOutsideHumidity(data.humidity);
         Dashboard::instance().updateOutsideWindSpeed(data.windSpeed);
         Dashboard::instance().updateOutsideFeelsLike(data.feelsLike);
-        Dashboard::instance().updateOutsideDailyHigh(data.tempMax);
-        Dashboard::instance().updateOutsideDailyLow(data.tempMin);
         Dashboard::instance().updateOutsidePressure(data.pressure);
         ui->currentWeatherBody.setDescription(data.description);
         ui->currentWeatherBody.setFeelsLikeTemp(data.feelsLike);
@@ -114,6 +113,20 @@ public:
         ui->forecastTable.set(forecast);
         Dashboard::instance().updateOutsidePrecipitation(
             Weather::instance().getNext24hPrecipitation());
+        static constexpr uint8_t kHourlyForecastCount = 4;
+        static constexpr uint8_t kDailyStartIndex     = kHourlyForecastCount;
+        const Weather::Data&     forecast_day         = forecast[kDailyStartIndex];
+        if (forecast_day.timestamp != 0)
+        {
+            Dashboard::instance().updateOutsideDailyHigh(forecast_day.tempMax);
+            Dashboard::instance().updateOutsideDailyLow(forecast_day.tempMin);
+        } else
+        {
+            Dashboard::instance().updateOutsideDailyHigh(
+                std::numeric_limits<float>::quiet_NaN());
+            Dashboard::instance().updateOutsideDailyLow(
+                std::numeric_limits<float>::quiet_NaN());
+        }
     }
 
     void setSSID(char* newSSID)
