@@ -866,7 +866,7 @@ public:
                 if (tv_->date_label)
                 {
                     char date_text[24] = { 0 };
-                    strftime(date_text, sizeof(date_text), "%d %b %Y, %a", timeInfo);
+                    strftime(date_text, sizeof(date_text), "%a %d %b", timeInfo);
                     lv_label_set_text(tv_->date_label, date_text);
                 }
             } else
