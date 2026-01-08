@@ -4,14 +4,12 @@
 
 static void set_system_time(void* pv)
 {
-    const TickType_t xDelay        = pdMS_TO_TICKS(30000);
+    (void)pv;
+    const TickType_t xDelay        = pdMS_TO_TICKS(60000);
     TickType_t       xLastWakeTime = xTaskGetTickCount();
 
     for (;;)
     {
-        if (*reinterpret_cast<uint8_t*>(pv))
-            break;
-
         lvgl_port_lock(-1);
         time_t time_val = BM8563::instance().getUnixTimeStamp();
         auto   t        = static_cast<uint32_t>(time_val);
@@ -20,7 +18,6 @@ static void set_system_time(void* pv)
         lvgl_port_unlock();
         vTaskDelayUntil(&xLastWakeTime, xDelay);
     }
-    vTaskDelete(nullptr);
 }
 
 class TimeStamp
