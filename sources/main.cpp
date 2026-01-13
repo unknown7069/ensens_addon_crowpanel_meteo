@@ -102,6 +102,9 @@ extern "C" void app_main(void)
     TimeStamp::instance().init();
     UseCases::AccessPointsUpdate::instance().init();
 
+    int  last_brightness_hour = -1;
+    bool last_time_set        = false;
+
     while (true)
     {
         if (!WIFI::instance().isConnected())
@@ -126,6 +129,27 @@ extern "C" void app_main(void)
             }
         }
         connected = true;
+
+        bool time_is_set = CurrentTime::instance().isTimeSet();
+        if (time_is_set && !last_time_set)
+        {
+            // Force a refresh right after time becomes valid.
+            last_brightness_hour = -1;
+            last_time_set        = true;
+        }
+        time_t now_local = CurrentTime::instance().nowLocal();
+        if (now_local > 0)
+        {
+            struct tm timeinfo;
+            localtime_r(&now_local, &timeinfo);
+            if (timeinfo.tm_hour != last_brightness_hour)
+            {
+                Brightness::instance().update(time_is_set);
+                ESP_LOGI(TAG, "Auto brightness update: hour=%02d time_set=%s",
+                         timeinfo.tm_hour, time_is_set ? "true" : "false");
+                last_brightness_hour = timeinfo.tm_hour;
+            }
+        }
 
         Location::instance().get(*location);
         Weather::instance().setLocation(location->latitude, location->longitude,

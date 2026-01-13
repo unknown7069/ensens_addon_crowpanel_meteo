@@ -158,7 +158,6 @@ public:
         WeatherScreen::instance().setCurrentWeather(*weatherInfo);
         WifiScreen::instance().setLocation(*weatherInfo);
         WeatherScreen::instance().setForecast(forecast_);
-        Brightness::instance().update(CurrentTime::instance().isTimeSet() ? true : false);
     }
 
     bool updateWeather()
