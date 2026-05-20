@@ -41,7 +41,9 @@ bool CurrentTime::isTimeSet() const
 
 time_t CurrentTime::now() const
 {
-    return _timestamp;
+    time_t current_time;
+    time(&current_time);
+    return current_time;
 }
 
 time_t CurrentTime::nowLocal() const
