@@ -10,8 +10,10 @@ class Brightness
     uint8_t                  _level;
     bool                     _autoUpdate;
     lv_obj_t*                mask;
+    lv_timer_t*              brightnessTimer;
     void                     createMask();
     void                     setMaskOpacity(uint8_t);
+    Brightness(); // Constructor
 
 public:
     static Brightness& instance()
@@ -23,5 +25,5 @@ public:
 
     bool set(bool, uint8_t);
     bool get(bool*, uint8_t*);
-    bool update(bool);
+    bool update();
 };

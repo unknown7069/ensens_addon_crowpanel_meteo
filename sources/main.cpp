@@ -102,68 +102,54 @@ extern "C" void app_main(void)
     TimeStamp::instance().init();
     UseCases::AccessPointsUpdate::instance().init();
 
-    int  last_brightness_hour = -1;
-    bool last_time_set        = false;
+     bool last_time_set = false;
 
-    while (true)
-    {
-        if (!WIFI::instance().isConnected())
-        {
-            connected = false;
-            WIFI::instance().waitForConnection();
-            continue;
-        }
-        if ((!connected) && (!CurrentTime::instance().isTimeSet()))
-        {
-            CurrentTime::instance().init();
-            if (CurrentTime::instance().sync())
-            {
-                time_t    now = CurrentTime::instance().now();
-                struct tm timeinfo;
-                localtime_r(&now, &timeinfo);
-                char strftime_buf[64];
-                strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-                ESP_LOGI(TAG, "The current date/time is: %s", strftime_buf);
+     while (true)
+     {
+         if (!WIFI::instance().isConnected())
+         {
+             connected = false;
+             WIFI::instance().waitForConnection();
+             continue;
+         }
+         if ((!connected) && (!CurrentTime::instance().isTimeSet()))
+         {
+             CurrentTime::instance().init();
+             if (CurrentTime::instance().sync())
+             {
+                 time_t    now = CurrentTime::instance().now();
+                 struct tm timeinfo;
+                 localtime_r(&now, &timeinfo);
+                 char strftime_buf[64];
+                 strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+                 ESP_LOGI(TAG, "The current date/time is: %s", strftime_buf);
 
-                TimeStamp::instance().is_sync_current_time = 1;
-            }
-        }
-        connected = true;
+                 TimeStamp::instance().is_sync_current_time = 1;
+             }
+         }
+         connected = true;
 
-        bool time_is_set = CurrentTime::instance().isTimeSet();
-        if (time_is_set && !last_time_set)
-        {
-            // Force a refresh right after time becomes valid.
-            last_brightness_hour = -1;
-            last_time_set        = true;
-        }
-        time_t now_local = CurrentTime::instance().nowLocal();
-        if (now_local > 0)
-        {
-            struct tm timeinfo;
-            localtime_r(&now_local, &timeinfo);
-            if (timeinfo.tm_hour != last_brightness_hour)
-            {
-                Brightness::instance().update(time_is_set);
-                ESP_LOGI(TAG, "Auto brightness update: hour=%02d time_set=%s",
-                         timeinfo.tm_hour, time_is_set ? "true" : "false");
-                last_brightness_hour = timeinfo.tm_hour;
-            }
-        }
+         bool time_is_set = CurrentTime::instance().isTimeSet();
+         if (time_is_set && !last_time_set)
+         {
+             // Force a refresh right after time becomes valid.
+             Brightness::instance().update();
+             last_time_set = true;
+         }
 
-        Location::instance().get(*location);
-        Weather::instance().setLocation(location->latitude, location->longitude,
-                                        location->locationName);
-        char   ssid[MAX_SSID_LEN + 1];
-        int8_t rssi;
-        WIFI::instance().getCurrentAP(ssid, &rssi);
-        WeatherScreen::instance().updateRSSI(rssi);
-        WeatherScreen::instance().setSSID(ssid);
-        WifiScreen::instance().setSSID(ssid, rssi);
+         Location::instance().get(*location);
+         Weather::instance().setLocation(location->latitude, location->longitude,
+                                         location->locationName);
+         char   ssid[MAX_SSID_LEN + 1];
+         int8_t rssi;
+         WIFI::instance().getCurrentAP(ssid, &rssi);
+         WeatherScreen::instance().updateRSSI(rssi);
+         WeatherScreen::instance().setSSID(ssid);
+         WifiScreen::instance().setSSID(ssid, rssi);
 
-        if (WeatherScreen::instance().updateWeather())
-        {
-            vTaskDelay(150000); // 2.5 minutes
-        }
-    }
+         if (WeatherScreen::instance().updateWeather())
+         {
+             vTaskDelay(150000); // 2.5 minutes
+         }
+     }
 }

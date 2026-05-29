@@ -4,6 +4,15 @@
 #include "esp_log.h"
 #include "nvs.h"
 #include "nvs_flash.h"
+#include "lvgl.h" // For lv_timer_t and related functions
+
+Brightness::Brightness() : brightnessTimer(NULL) {}
+
+static void brightnessTimerCallback(lv_timer_t* timer)
+{
+    LV_UNUSED(timer);
+    Brightness::instance().update();
+}
 
 void Brightness::createMask()
 {
@@ -57,13 +66,19 @@ bool Brightness::init()
         nvs_close(nvsHandle);
     }
 
-    createMask();
-    if (_autoUpdate) {
-        update(CurrentTime::instance().isTimeSet());
-    } else {
-        setMaskOpacity(_level);
-        WifiScreen::instance().setBrightness(_autoUpdate, _level);
-    }
+     createMask();
+
+     brightnessTimer = lv_timer_create(brightnessTimerCallback, 3600000, NULL);
+     if (brightnessTimer == NULL) {
+         ESP_LOGE(Tag, "Failed to create brightness timer");
+     }
+
+     if (_autoUpdate) {
+         update();
+     } else {
+         setMaskOpacity(_level);
+         WifiScreen::instance().setBrightness(_autoUpdate, _level);
+     }
 
     return retVal;
 }
@@ -85,8 +100,8 @@ bool Brightness::set(bool isAuto, uint8_t percent)
             retVal = false;
         } else
             ESP_LOGD(Tag, "Switched to auto brightness mode");
-        nvs_close(nvsHandle);
-        update(CurrentTime::instance().isTimeSet());
+         nvs_close(nvsHandle);
+         update();
     } else
     {
         nvs_handle_t nvsHandle;
@@ -110,11 +125,12 @@ bool Brightness::set(bool isAuto, uint8_t percent)
     return retVal;
 }
 
-bool Brightness::update(bool timeConfigured)
+bool Brightness::update()
 {
     if (!_autoUpdate)
         return true;
 
+    bool timeConfigured = CurrentTime::instance().isTimeSet();
     uint8_t calculatedBrightness = DefaultValueWhenNotConfigured;
 
     if (timeConfigured)
