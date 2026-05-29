@@ -58,9 +58,12 @@ bool Brightness::init()
     }
 
     createMask();
-    setMaskOpacity(_level);
-
-    WifiScreen::instance().setBrightness(_autoUpdate, _level);
+    if (_autoUpdate) {
+        update(CurrentTime::instance().isTimeSet());
+    } else {
+        setMaskOpacity(_level);
+        WifiScreen::instance().setBrightness(_autoUpdate, _level);
+    }
 
     return retVal;
 }
