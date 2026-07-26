@@ -272,7 +272,7 @@ static void tabview_init_outdoor_section(tabview_t* tview, lv_obj_t* section_gri
     tabview_make_metric_clickable(tview->temp_outside_label, tview);
 
     lv_obj_t* feels_like_icon = lv_label_create(outdoor_section);
-    lv_label_set_text(feels_like_icon, "FL");
+    lv_label_set_text(feels_like_icon, "T");
     lv_obj_set_style_text_font(feels_like_icon, &lv_font_montserrat_28, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_grid_cell(feels_like_icon, LV_GRID_ALIGN_CENTER, 2, 1, LV_GRID_ALIGN_CENTER, 0, 1);
 

@@ -48,7 +48,9 @@ time_t CurrentTime::now() const
 
 time_t CurrentTime::nowLocal() const
 {
-    return _timestamp + _timezoneOffset;
+    time_t current_time;
+    time(&current_time);
+    return current_time + _timezoneOffset;
 }
 
 void CurrentTime::setTimezoneOffset(int32_t offsetSeconds)
