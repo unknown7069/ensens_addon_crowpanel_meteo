@@ -313,7 +313,7 @@ public:
         lv_label_set_text(humi_dew_point_box_->value_humi->int_part, "-");
         lv_obj_set_style_text_font(humi_dew_point_box_->value_humi->int_part,
                                    &lv_font_montserrat_30, LV_PART_MAIN | LV_STATE_DEFAULT);
-        lv_label_set_text(humi_dew_point_box_->value_humi->unit_part, "\ %");
+        lv_label_set_text(humi_dew_point_box_->value_humi->unit_part, "%");
 
         lv_label_set_text(humi_dew_point_box_->value_dew->int_part, "-");
         lv_obj_set_style_text_font(humi_dew_point_box_->value_dew->int_part, &lv_font_montserrat_30,

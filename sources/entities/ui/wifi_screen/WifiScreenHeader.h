@@ -28,7 +28,7 @@ class WifiScreenHeader
     Image                  backIcon;
     Image                  wifiIcon;
     Button                 button;
-    static constexpr char* Tag = "wifiScreenHeader";
+    static constexpr const char* Tag = "wifiScreenHeader";
     static void            configButtonCallback(lv_event_t* e, void* context);
 
 public:

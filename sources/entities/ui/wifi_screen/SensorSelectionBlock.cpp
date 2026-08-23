@@ -86,9 +86,7 @@ bool SensorSelectionBlock::saveSensorName(const char* sens_name)
 
 bool SensorSelectionBlock::getSensorName()
 {
-    nvs_handle_t handle;
-    size_t       size   = MaxSensorNameLength;
-    bool         retVal = true;
+    bool retVal = true;
 
     strcpy(saved_sens_name, "indoor\0");
 

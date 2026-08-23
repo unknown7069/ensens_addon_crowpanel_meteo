@@ -52,7 +52,7 @@ protected:
             unlock();
     }
 
-    void appendText(char* newText, bool updateOnScreen)
+    void appendText(const char* newText, bool updateOnScreen)
     {
         if (!label || !newText)
             return;
@@ -67,7 +67,7 @@ protected:
             unlock();
     }
 
-    void setText(char* newText, bool updateOnScreen)
+    void setText(const char* newText, bool updateOnScreen)
     {
         if (!label || !newText)
             return;

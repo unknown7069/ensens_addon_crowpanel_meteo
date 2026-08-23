@@ -9,7 +9,7 @@
 
 class SensorSelectionBlock : public LvglObject
 {
-    static constexpr char* Tag = "SensorSelection";
+    static constexpr const char* Tag = "SensorSelection";
     FlexContainer          spacer;
 
     static constexpr uint8_t MaxSensorNameLength = 20;

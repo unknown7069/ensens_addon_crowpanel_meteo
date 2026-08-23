@@ -8,7 +8,7 @@
 
 class BrightnessBlock
 {
-    static constexpr char* Tag = "Brightness block";
+    static constexpr const char* Tag = "Brightness block";
     MenuPage               page;
     FlexContainer          spacer;
     FlexContainer          brightnessSwitchContainer;

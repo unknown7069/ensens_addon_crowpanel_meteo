@@ -4,7 +4,7 @@
 
 class Location
 {
-    static constexpr char* Tag      = "Location";
+    static constexpr const char* Tag      = "Location";
     const uint32_t         buf_size = 2048;
     char*                  locationResponseBuffer =
         static_cast<char*>(heap_caps_calloc(buf_size, sizeof(char), MALLOC_CAP_SPIRAM));

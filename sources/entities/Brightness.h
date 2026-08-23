@@ -6,7 +6,7 @@
 class Brightness
 {
     static constexpr uint8_t DefaultValueWhenNotConfigured = 100;
-    static constexpr char*   Tag                           = "Brightness";
+    static constexpr const char*   Tag                           = "Brightness";
     uint8_t                  _level;
     bool                     _autoUpdate;
     lv_obj_t*                mask;

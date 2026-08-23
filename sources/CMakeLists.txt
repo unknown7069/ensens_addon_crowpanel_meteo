@@ -30,6 +30,12 @@ idf_component_register(SRCS "main.cpp" ${ADAPTERS_SRC} ${ENTITIES_SRC} ${IMAGES_
                     INCLUDE_DIRS "." "adapters" "entities" "usecases")
 
 target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-missing-field-initializers)
+# LVGL v8 style selectors combine two anonymous enums (LV_PART_x | LV_STATE_y) by design;
+# the deprecation warning fires on every such call. Fixed upstream in LVGL v9.
+# LVGL v8 style selectors combine two anonymous enums (LV_PART_x | LV_STATE_y) by design;
+# the deprecation warning fires on every such call. Fixed upstream in LVGL v9.
+target_compile_options(${COMPONENT_LIB} PRIVATE
+                       $<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-enum-enum-conversion>)
 target_compile_definitions(${COMPONENT_LIB} PRIVATE COMMON_DEMO_APP)
 # The following code is to avoid the error:
 # lvgl_v8_port/managed_components/lvgl__lvgl/demos/stress/lv_demo_stress.c:92:29: error: format '%d' expects argument of

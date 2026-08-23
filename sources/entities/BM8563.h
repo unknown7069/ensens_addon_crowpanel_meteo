@@ -3,7 +3,7 @@
 #include "i2c_bus.h"
 #include <ctime>
 
-static uint8_t get_day_of_week(const uint32_t year, uint32_t month, uint32_t day)
+inline uint8_t get_day_of_week(const uint32_t year, uint32_t month, uint32_t day)
 {
     uint32_t a = month < 3 ? 1 : 0;
     uint32_t b = year - a;

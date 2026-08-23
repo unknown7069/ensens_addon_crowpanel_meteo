@@ -442,8 +442,6 @@ void Aggregator::addPressureData(const std::string&                     dev_name
             // Now "mean" value isn't used
             // Instead of it is used "runtime" value from sensor
 
-            float mean = pressure_mean.get();
-
             EnvironmentalSensor::Flags flags;
             flags.set_source(EnvironmentalSensor::Source::NONE);
             time_t time_val = time(nullptr);

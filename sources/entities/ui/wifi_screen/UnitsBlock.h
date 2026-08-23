@@ -14,7 +14,7 @@
 
 class UnitsBlock
 {
-    static constexpr char* Tag = "UnitsBlock";
+    static constexpr const char* Tag = "UnitsBlock";
     MenuPage               page;
     FlexContainer          spacer;
     FlexContainer          temperatureUnitsEntryContainer;
