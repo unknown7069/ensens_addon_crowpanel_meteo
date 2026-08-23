@@ -7,10 +7,6 @@
 //"https://api.openweathermap.org/data/2.5/weather?q=Kazan&appid="
 // WEATHER_API_KEY
 #define WEATHER_URL "https://api.openweathermap.org/data/2.5/weather?"
-//#define FORECAST_URL
-//"http://api.openweathermap.org/data/2.5/forecast?q=Kazan&appid="
-// WEATHER_API_KEY
-#define FORECAST_URL "https://api.openweathermap.org/data/2.5/forecast?"
 
 class Weather
 {
@@ -22,7 +18,6 @@ class Weather
         char latitude[20];
         char requestURL[RequestBufferSize];
         char locationName[150];
-        float next24hPrecipitation;
     } * ctx_;
 
     Weather();
@@ -58,13 +53,7 @@ public:
 
     bool getCurrentWeather(Data* data);
 
-    bool getForecast(Data* data);
-
-    bool getNextDayIdx(Data* data, uint8_t* curIdx);
-
     void setLocation(char* lat, char* lon, char* name);
 
     bool checkLocation(char* name);
-
-    float getNext24hPrecipitation() const;
 };

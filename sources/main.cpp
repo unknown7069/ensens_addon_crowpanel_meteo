@@ -21,7 +21,7 @@
 #include "entities/WIFI.h"
 #include "entities/Weather.h"
 #include "usecases/AccessPointsUpdate.h"
-#include "entities/ui/weather_screen/WeatherScreen.h"
+#include "usecases/WeatherUpdate.h"
 
 #include <ctime>
 #include <sys/time.h>
@@ -143,11 +143,9 @@ extern "C" void app_main(void)
          char   ssid[MAX_SSID_LEN + 1];
          int8_t rssi;
          WIFI::instance().getCurrentAP(ssid, &rssi);
-         WeatherScreen::instance().updateRSSI(rssi);
-         WeatherScreen::instance().setSSID(ssid);
          WifiScreen::instance().setSSID(ssid, rssi);
 
-         if (WeatherScreen::instance().updateWeather())
+         if (UseCases::WeatherUpdate::instance().update())
          {
              vTaskDelay(150000); // 2.5 minutes
          }

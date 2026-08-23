@@ -5,8 +5,30 @@
 #include "I2CLockGuard.h"
 
 #include <stdexcept>
+#include <ctime>
 
 static auto TAG = "BM8563";
+
+// Equivalent of timegm(): converts civil UTC time to an epoch value. Not provided
+// by the ESP-IDF newlib, so implemented directly (Howard Hinnant's algorithm).
+static time_t utc_mktime(const struct tm* time_struct)
+{
+    const int  year  = time_struct->tm_year + 1900;
+    const int  month = time_struct->tm_mon + 1;
+    const bool leapAdj = month <= 2;
+
+    const int      era = (year - (leapAdj ? 1 : 0)) / 400;
+    const unsigned yoe = static_cast<unsigned>(year - (leapAdj ? 1 : 0) - era * 400);
+    const unsigned doy =
+        (153u * static_cast<unsigned>(month + (leapAdj ? 9 : -3)) + 2u) / 5u +
+        static_cast<unsigned>(time_struct->tm_mday) - 1u;
+    const unsigned doe = yoe * 365u + yoe / 4u - yoe / 100u + doy;
+
+    const int64_t days = static_cast<int64_t>(era) * 146097 + static_cast<int64_t>(doe) - 719468;
+
+    return static_cast<time_t>(days * 86400 + time_struct->tm_hour * 3600 +
+                               time_struct->tm_min * 60 + time_struct->tm_sec);
+}
 
 #define BM8563_I2C_DEFAULT_ADDRESS 0x51
 
@@ -196,7 +218,7 @@ time_t BM8563::getUnixTimeStamp() const
     time_struct.tm_min    = rtc_time.minutes;     /* Minutes (0-59) */
     time_struct.tm_sec    = rtc_time.seconds;     /* Seconds (0-60) */
 
-    time_t timestamp = timegm(&time_struct);
+    time_t timestamp = utc_mktime(&time_struct);
     if (timestamp == -1)
     {
         ESP_LOGE(TAG, "timegm failed");

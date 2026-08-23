@@ -80,7 +80,6 @@ typedef struct {
     lv_obj_t* parent;
     lv_obj_t* cont;
     lv_obj_t* tab_1;
-    lv_obj_t* tab_2;
     lv_obj_t* tab_dashboard;
     lv_obj_t* tab_settings;
     lv_obj_t* tab_history;

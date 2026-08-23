@@ -1,6 +1,6 @@
 #include "Dashboard.h"
 
-#include "entities/ui/weather_screen/WeatherScreen.h"
+#include "usecases/WeatherUpdate.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -16,7 +16,6 @@ lv_obj_t* Dashboard::create(SensorSettings* sensor_settings, lv_obj_t* parent)
 
     tv_ = tabview_create(parent, 25);
     create_main_elements(tv_->tab_1);
-    WeatherScreen::instance().create(sensor_settings_, tv_);
     WifiScreen::instance().create(sensor_settings_, tv_->tab_settings);
     WifiScreen::instance().loadSettings();
 
@@ -357,7 +356,7 @@ void Dashboard::updateSettings(const std::string& old_dev_name)
 
     updateDewPoint(sensor_settings_->sensor_name);
 
-    WeatherScreen::instance().updateWeatherValues();
+    UseCases::WeatherUpdate::instance().refresh();
 
     unlock();
     updateBottomPlot();

@@ -604,12 +604,6 @@ tabview_t* tabview_create(lv_obj_t* parent, int32_t tab_h)
     lv_obj_set_style_pad_right(tview->tab_1, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_top(tview->tab_1, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_pad_bottom(tview->tab_1, 15, LV_PART_MAIN | LV_STATE_DEFAULT);
-    tview->tab_2 = lv_tabview_add_tab(tview->cont, "Forecast");
-    /* Remove tab button area padding */
-    // lv_obj_set_style_pad_left(tview->tab_2, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    // lv_obj_set_style_pad_right(tview->tab_2, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_top(tview->tab_2, 10, LV_PART_MAIN | LV_STATE_DEFAULT);
-    lv_obj_set_style_pad_bottom(tview->tab_2, 5, LV_PART_MAIN | LV_STATE_DEFAULT);
     tview->tab_bar = lv_tabview_get_tab_btns(tview->cont);
     lv_obj_set_style_pad_right(tview->tab_bar, LV_HOR_RES / 2, 0);
     return tview;
