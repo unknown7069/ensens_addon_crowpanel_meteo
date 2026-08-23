@@ -146,15 +146,14 @@ public:
         if (CurrentTime::instance().isTimeSet())
         {
             time(&curTimestamp);
-            weatherInfo->timestamp = curTimestamp + weatherInfo->timestampOffset;
-            BM8563::instance().setUnixTimeStamp(weatherInfo->timestamp);
+            BM8563::instance().setUnixTimeStamp(curTimestamp);
             //  TimeStamp::instance().is_sync_current_time = 1;
         }
         CurrentTime::instance().setTimezoneOffset(weatherInfo->timestampOffset);
         ESP_LOGD("WeatherScreen", "weatherInfo->timestampOffset: time=%lu",
                  weatherInfo->timestampOffset);
         TimeStamp::instance().is_sync_current_time = 1;
-        Dashboard::instance().updateTimeLabel(weatherInfo->timestamp, weatherInfo->timestampOffset);
+        Dashboard::instance().updateTimeLabel(static_cast<uint32_t>(curTimestamp), weatherInfo->timestampOffset);
         WeatherScreen::instance().setCurrentWeather(*weatherInfo);
         WifiScreen::instance().setLocation(*weatherInfo);
         WeatherScreen::instance().setForecast(forecast_);

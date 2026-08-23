@@ -196,10 +196,10 @@ time_t BM8563::getUnixTimeStamp() const
     time_struct.tm_min    = rtc_time.minutes;     /* Minutes (0-59) */
     time_struct.tm_sec    = rtc_time.seconds;     /* Seconds (0-60) */
 
-    time_t timestamp = mktime(&time_struct);
+    time_t timestamp = timegm(&time_struct);
     if (timestamp == -1)
     {
-        ESP_LOGE(TAG, "mktime failed");
+        ESP_LOGE(TAG, "timegm failed");
     }
     return timestamp;
 }
@@ -208,10 +208,12 @@ void BM8563::setUnixTimeStamp(uint32_t timestamp)
 {
     I2CLockGuard guard;
 
+    is_need_update = true;
+
     if (timestamp != 0 && is_need_update)
     {
         time_t     timestampStruct = timestamp;
-        struct tm* timeInfo        = localtime(&timestampStruct);
+        struct tm* timeInfo        = gmtime(&timestampStruct);
 
         Time_t time_ = { (uint8_t)timeInfo->tm_hour, (uint8_t)timeInfo->tm_min,
                          (uint8_t)timeInfo->tm_sec };

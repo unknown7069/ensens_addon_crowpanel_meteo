@@ -53,6 +53,11 @@ time_t CurrentTime::nowLocal() const
     return current_time + _timezoneOffset;
 }
 
+time_t CurrentTime::getTimezoneOffset() const
+{
+    return _timezoneOffset;
+}
+
 void CurrentTime::setTimezoneOffset(int32_t offsetSeconds)
 {
     _timezoneOffset = offsetSeconds;

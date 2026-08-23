@@ -18,4 +18,5 @@ public:
     time_t now() const;
     time_t nowLocal() const;
     void   setTimezoneOffset(int32_t timezoneOffsetSeconds);
+    time_t getTimezoneOffset() const;
 };

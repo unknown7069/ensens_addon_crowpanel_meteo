@@ -838,22 +838,23 @@ public:
         lock();
 
         current_timestamp_ = timestamp;
+        time_t localTimestamp = static_cast<time_t>(timestamp) + timestampOffset;
 
-        timeZoneLabel.setCurrentTime(timestamp);
-        dateLabel.setCurrentDate(timestamp, "%d.%m.%y");
+        timeZoneLabel.setCurrentTime(localTimestamp);
+        dateLabel.setCurrentDate(localTimestamp, "%d.%m.%y");
 
         // clear previous mark day
         for (int i = 0; i < 7; i++)
             lv_label_set_text(days_header_->current_day[i], "");
         // set current mark day
-        lv_label_set_text(days_header_->current_day[getDayOfWeek(timestamp)], CUR_DAY_SYMBOL);
+        lv_label_set_text(days_header_->current_day[getDayOfWeek(localTimestamp)], CUR_DAY_SYMBOL);
 
-        lv_label_set_text(days_header_->zodizk_sign, getZodiacSign(timestamp).c_str());
+        lv_label_set_text(days_header_->zodizk_sign, getZodiacSign(localTimestamp).c_str());
         if (tv_)
         {
-            if (timestamp != 0)
+            if (localTimestamp != 0)
             {
-                time_t   timestampStruct = timestamp;
+                time_t   timestampStruct = localTimestamp;
                 struct tm* timeInfo      = localtime(&timestampStruct);
 
                 if (tv_->label)
