@@ -18,11 +18,7 @@
 
 #include "esp_log.h"
 
-#define HIST_DATA_RING_BUFFER_SIZE HALF_HISTORY_SIZE
-// buffer size required to compute tendency value
 #define RT_DATA_RING_BUFFER_SIZE (TENDENCY_UPDATE_PERIOD_MS / DEVICE_ADV_UPDATE_PERIOD_MS)
-// buffer size required to compute mean over certain period of time
-#define MEAN_WINDOW_SIZE (HISTORY_UPDATE_PERIOD_MS / DEVICE_ADV_UPDATE_PERIOD_MS)
 
 template <typename T, size_t N> class RingBuffer
 {
@@ -178,55 +174,6 @@ public:
     }
 };
 
-template <size_t WINDOW_SIZE> struct Mean {
-private:
-    double sum   = 0.0;
-    size_t count = 0;
-
-public:
-    Mean() = default;
-
-    // Returns true if value was added, false if window is full
-    bool add(const float new_value)
-    {
-        if (full())
-            return false;
-
-        sum += static_cast<double>(new_value);
-        ++count;
-        return true;
-    }
-
-    // Returns calculated mean or 0.0f for empty window
-    float get() const
-    {
-        if (count == 0)
-            return 0.0f;
-        return static_cast<float>(sum / count);
-    }
-
-    bool full() const
-    {
-        return count >= WINDOW_SIZE;
-    }
-
-    void reset()
-    {
-        sum   = 0.0;
-        count = 0;
-    }
-
-    bool empty() const
-    {
-        return count == 0;
-    }
-
-    size_t size() const
-    {
-        return count;
-    }
-};
-
 struct DailyMetricHistory {
     static constexpr size_t  SlotsPerDay         = 48;
     static constexpr uint32_t SlotDurationSecond = 30 * 60;
@@ -263,10 +210,6 @@ struct RealtimeData {
     RingBuffer<EnvironmentalSensor::DataSample<float>, 2>                        iaq;
 };
 
-struct HistoryData {
-    RingBuffer<EnvironmentalSensor::DataSample<float>, HIST_DATA_RING_BUFFER_SIZE> pressure;
-};
-
 struct lock_guard {
     lock_guard(const SemaphoreHandle_t mutex) : mutex_(mutex)
     {
@@ -281,75 +224,10 @@ private:
     SemaphoreHandle_t mutex_;
 };
 
-class PlotChartData
-{
-public:
-    PlotChartData() {};
-
-    float popHistoryData();
-    void  popLiveData(std::vector<float>& old_values);
-
-    void pushHistoryData(float value);
-    void pushHistoryData(const std::vector<float>& new_data);
-    void pushLiveData(float value);
-    void pushLiveData(const std::vector<float>& new_data);
-
-    int16_t* data()
-    {
-        return data_.data();
-    }
-
-    void load();
-
-    void save(const int16_t* data, size_t data_size)
-    {
-        std::copy(data, data + data_size, data_.begin());
-    }
-
-    [[nodiscard]] uint16_t getHistoryDataSize() const
-    {
-        return history_data_size_;
-    }
-
-    [[nodiscard]] uint16_t getLiveDataSize() const
-    {
-        return history_data_size_;
-    }
-
-    [[nodiscard]] bool isValue(uint16_t id) const
-    {
-        if (id >= id_start_h_data && id < (id_end_h_data + 1))
-            return id >= (id_end_h_data + 1) - history_data_size_;
-        else
-            return (id - (id_end_h_data + 1)) < live_data_size_;
-    }
-
-    void setSelfStorageMode(bool enable)
-    {
-        self_storage_mode_ = enable;
-    }
-
-private:
-    bool                              self_storage_mode_ = true;
-    std::array<int16_t, HISTORY_SIZE> data_              = { 0 };
-    uint16_t                          history_data_size_ = 0;
-    uint16_t                          live_data_size_    = 0;
-
-    size_t id_start_h_data = 0;
-    size_t id_end_h_data   = HALF_HISTORY_SIZE - 1;
-
-    size_t id_start_l_data = HALF_HISTORY_SIZE;
-    size_t id_end_l_data   = HISTORY_SIZE - 1;
-};
-
 class Aggregator
 {
-    std::unordered_map<std::string, RealtimeData> sensor_data_db;
-    std::unordered_map<std::string, HistoryData>  history_data_db;
+    std::unordered_map<std::string, RealtimeData>       sensor_data_db;
     std::unordered_map<std::string, IndoorDailyMetrics> indoor_daily_metrics_db;
-
-    std::unordered_map<std::string, Mean<MEAN_WINDOW_SIZE> > pressure_mean_db;
-    std::unordered_map<std::string, PlotChartData>           pressure_plot_data_db;
 
     SensorSettings sensor_settings;
 
@@ -408,10 +286,6 @@ public:
                     const EnvironmentalSensor::DataSample<float>& data);
     bool setIAQData(const std::string&                            dev_name,
                     const EnvironmentalSensor::DataSample<float>& data);
-
-    std::vector<std::string> getPressurePlotDataKeys();
-    PlotChartData*           getPressurePlotData(const std::string& dev_name);
-    void savePressurePlotData(const std::string& dev_name, const int16_t* data, size_t data_size);
 
     bool getIndoorMetricSeries(
         const std::string& dev_name, EnvironmentalSensor::Parameters param,

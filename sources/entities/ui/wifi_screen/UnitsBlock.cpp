@@ -136,7 +136,6 @@ void UnitsBlock::loadSettings()
     }
 
     updateUnitsDropdown();
-    Dashboard::instance().updateUnitNames();
 
     nvs_close(handle);
 }
