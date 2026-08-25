@@ -1,9 +1,5 @@
-#include "WifiScreenHeader.h"
-#ifdef COMMON_DEMO_APP
+﻿#include "WifiScreenHeader.h"
 #include "entities/ui/Dashboard/Dashboard.h"
-#else
-#include "entities/weather_screen/WeatherScreen.h"
-#endif
 
 LV_IMG_DECLARE(wifi_100);
 LV_IMG_DECLARE(wifi_75);
@@ -15,17 +11,13 @@ void WifiScreenHeader::configButtonCallback(lv_event_t* e, void* context)
 {
     if (lv_event_get_code(e) == LV_EVENT_CLICKED)
     {
-        ESP_LOGI(Tag, "button pressed");
-#ifdef COMMON_DEMO_APP
-        tabview_t* tv = Dashboard::instance().getTabView();
+        ESP_LOGI(TAG, "button pressed");
+        DashboardWidgets* tv = Dashboard::instance().getTabView();
         if (tv == nullptr || tv->parent == nullptr)
             return;
         lvgl_port_lock(-1);
         lv_disp_load_scr(tv->parent);
         lvgl_port_unlock();
-#else
-        WeatherScreen::instance().load();
-#endif
     }
 }
 

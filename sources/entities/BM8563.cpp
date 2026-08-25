@@ -1,4 +1,4 @@
-#include "driver/i2c.h"
+﻿#include "driver/i2c.h"
 #include "esp_log.h"
 
 #include "BM8563.h"
@@ -96,7 +96,7 @@ BM8563::BM8563(i2c_bus_handle_t bus)
     ctrl1 &= ~(1 << 5);
     i2c_bus_write_byte(i2c_device_, BM8563_REG_CONTROL_STATUS1, ctrl1);
 
-    is_need_update = true;
+    needs_update_ = true;
 }
 
 BM8563::~BM8563()
@@ -230,9 +230,9 @@ void BM8563::setUnixTimeStamp(uint32_t timestamp)
 {
     I2CLockGuard guard;
 
-    is_need_update = true;
+    needs_update_ = true;
 
-    if (timestamp != 0 && is_need_update)
+    if (timestamp != 0 && needs_update_)
     {
         time_t     timestampStruct = timestamp;
         struct tm* timeInfo        = gmtime(&timestampStruct);
@@ -247,6 +247,6 @@ void BM8563::setUnixTimeStamp(uint32_t timestamp)
 
         setTime(time_);
         setDate(date_);
-        is_need_update = false;
+        needs_update_ = false;
     }
 }

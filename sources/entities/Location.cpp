@@ -21,21 +21,21 @@ bool Location::get(Location::Data& data)
         {
             data.latitude[0]  = '\0';
             data.longitude[0] = '\0';
-            ESP_LOGD(Tag, "Using manual location: %s", data.locationName);
+            ESP_LOGD(TAG, "Using manual location: %s", data.locationName);
             return true;
         }
     }
 
-    HTTPRequest request(const_cast<char*>(GetLocationURL), HTTP_METHOD_GET, locationResponseBuffer,
-                        buf_size);
+    HTTPRequest request(const_cast<char*>(GetLocationURL), HTTP_METHOD_GET, response_buffer_,
+                        buffer_size_);
 
     jparse_ctx_t jctx;
-    uint32_t     receivedLen;
+    int32_t      receivedLen;
     bool         retVal = true;
     float        latitude;
     float        longitude;
     if (((receivedLen = request.perform()) > 0) &&
-        (json_parse_start(&jctx, locationResponseBuffer, receivedLen) == OS_SUCCESS) &&
+        (json_parse_start(&jctx, response_buffer_, receivedLen) == OS_SUCCESS) &&
         (json_obj_get_float(&jctx, "lat", &latitude) == OS_SUCCESS) &&
         (json_obj_get_float(&jctx, "lon", &longitude) == OS_SUCCESS) &&
         (json_obj_get_string(&jctx, "city", data.locationName, sizeof(Data::locationName)) ==
@@ -43,15 +43,15 @@ bool Location::get(Location::Data& data)
     {
         snprintf(data.latitude, sizeof(Data::latitude), "%.4f", latitude);
         snprintf(data.longitude, sizeof(Data::longitude), "%.4f", longitude);
-        ESP_LOGD(Tag, "Parsed: lat: %s, lon: %s, city - %s", data.latitude, data.longitude,
+        ESP_LOGD(TAG, "Parsed: lat: %s, lon: %s, city - %s", data.latitude, data.longitude,
                  data.locationName);
     } else
     {
-        ESP_LOGE(Tag, "Parser failed: objects");
+        ESP_LOGE(TAG, "Parser failed: objects");
         retVal = false;
     }
     json_parse_end(&jctx);
-    memset(locationResponseBuffer, 0, buf_size);
+    memset(response_buffer_, 0, buffer_size_);
     return retVal;
 }
 
@@ -70,10 +70,10 @@ bool Location::get(char* locationName)
     if (err != ESP_OK)
     {
         locationName[0] = '\0';
-        ESP_LOGI(Tag, "Using location auto-detection");
+        ESP_LOGI(TAG, "Using location auto-detection");
         retVal = false;
     } else
-        ESP_LOGD(Tag, "Using manual location: %s", locationName);
+        ESP_LOGD(TAG, "Using manual location: %s", locationName);
 
     return retVal;
 }
@@ -85,7 +85,7 @@ bool Location::setManual(char* const locationName)
     esp_err_t err = nvs_open("storage", NVS_READWRITE, &handle);
     if (err != ESP_OK)
     {
-        ESP_LOGE(Tag, "Failed to open NVS: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to open NVS: %s", esp_err_to_name(err));
         return false;
     }
 
@@ -94,18 +94,18 @@ bool Location::setManual(char* const locationName)
         err = nvs_erase_key(handle, "manual_location");
         if (err == ESP_OK)
         {
-            ESP_LOGI(Tag, "Manual location removed from NVS");
+            ESP_LOGI(TAG, "Manual location removed from NVS");
             nvs_commit(handle);
             nvs_close(handle);
             return true;
         } else if (err == ESP_ERR_NVS_NOT_FOUND)
         {
-            ESP_LOGW(Tag, "Manual location already cleared");
+            ESP_LOGW(TAG, "Manual location already cleared");
             nvs_close(handle);
             return true;
         } else
         {
-            ESP_LOGE(Tag, "Failed to erase manual_location: %s", esp_err_to_name(err));
+            ESP_LOGE(TAG, "Failed to erase manual_location: %s", esp_err_to_name(err));
             nvs_close(handle);
             return false;
         }
@@ -119,7 +119,7 @@ bool Location::setManual(char* const locationName)
     err = nvs_set_str(handle, "manual_location", locationName);
     if (err != ESP_OK)
     {
-        ESP_LOGE(Tag, "Failed to set manual_location: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to set manual_location: %s", esp_err_to_name(err));
         nvs_close(handle);
         return false;
     }
@@ -128,10 +128,10 @@ bool Location::setManual(char* const locationName)
     nvs_close(handle);
     if (err != ESP_OK)
     {
-        ESP_LOGE(Tag, "Failed to commit manual_location: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to commit manual_location: %s", esp_err_to_name(err));
         return false;
     }
 
-    ESP_LOGI(Tag, "Manual location saved: %s", locationName);
+    ESP_LOGI(TAG, "Manual location saved: %s", locationName);
     return true;
 }

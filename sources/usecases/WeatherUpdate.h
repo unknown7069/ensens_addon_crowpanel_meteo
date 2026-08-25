@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "entities/Weather.h"
 #include "entities/CurrentTime.h"
@@ -12,7 +12,7 @@ namespace UseCases
 {
 class WeatherUpdate
 {
-    static constexpr char Tag[] = "WeatherUpdate";
+    static constexpr char TAG[] = "WeatherUpdate";
 
     time_t         curTimestamp = 0;
     Weather::Data* weatherInfo =
@@ -32,7 +32,6 @@ class WeatherUpdate
             BM8563::instance().setUnixTimeStamp(curTimestamp);
         }
         CurrentTime::instance().setTimezoneOffset(weatherInfo->timestampOffset);
-        TimeStamp::instance().is_sync_current_time = 1;
         Dashboard::instance().updateTimeLabel(static_cast<uint32_t>(curTimestamp),
                                               weatherInfo->timestampOffset);
         Dashboard::instance().updateOutsideTemperature(weatherInfo->temperature);

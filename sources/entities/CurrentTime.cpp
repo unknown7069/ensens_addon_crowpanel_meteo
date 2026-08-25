@@ -23,20 +23,20 @@ bool CurrentTime::sync(uint32_t timeoutMs)
     esp_err_t result = esp_netif_sntp_sync_wait(pdMS_TO_TICKS(timeoutMs));
     if (result == ESP_OK)
     {
-        time(&_timestamp);
-        ESP_LOGI(TAG, "SNTP time synced: %lld", _timestamp);
+        time(&timestamp_);
+        ESP_LOGI(TAG, "SNTP time synced: %lld", timestamp_);
         return true;
     } else
     {
         ESP_LOGE(TAG, "SNTP time sync failed: %s", esp_err_to_name(result));
-        _timestamp = 0;
+        timestamp_ = 0;
         return false;
     }
 }
 
 bool CurrentTime::isTimeSet() const
 {
-    return _timestamp > 0;
+    return timestamp_ > 0;
 }
 
 time_t CurrentTime::now() const
@@ -50,15 +50,15 @@ time_t CurrentTime::nowLocal() const
 {
     time_t current_time;
     time(&current_time);
-    return current_time + _timezoneOffset;
+    return current_time + timezoneOffset_;
 }
 
 time_t CurrentTime::getTimezoneOffset() const
 {
-    return _timezoneOffset;
+    return timezoneOffset_;
 }
 
 void CurrentTime::setTimezoneOffset(int32_t offsetSeconds)
 {
-    _timezoneOffset = offsetSeconds;
+    timezoneOffset_ = offsetSeconds;
 }

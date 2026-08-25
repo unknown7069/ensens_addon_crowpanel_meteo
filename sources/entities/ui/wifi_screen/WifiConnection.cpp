@@ -1,4 +1,4 @@
-#include "WifiConnection.h"
+﻿#include "WifiConnection.h"
 #include "WifiScreen.h"
 
 LV_IMG_DECLARE(wifi_100);
@@ -44,7 +44,7 @@ void WifiConnection::wifiEventHandler(WIFI::Event event, void* context)
     case WIFI::Event::CONNECTED:
         if (screen->currentAP)
             screen->currentAP->remove();
-        ESP_LOGI(Tag, "wifi connected, AP removed");
+        ESP_LOGI(TAG, "wifi connected, AP removed");
         break;
     case WIFI::Event::DISCONNECTED:
         if (screen->currentAP)
@@ -57,7 +57,7 @@ void WifiConnection::wifiEventHandler(WIFI::Event event, void* context)
     default:
         break;
     }
-    ESP_LOGI(Tag, "wifi event - %d", event);
+    ESP_LOGI(TAG, "wifi event - %d", event);
     char   ssid[MAX_SSID_LEN + 1] = { 0 };
     int8_t rssi                   = 0;
     WIFI::instance().getCurrentAP(ssid, &rssi);
@@ -167,7 +167,7 @@ void WifiConnection::disconnectButtonCallback(lv_event_t* e, void* context)
         lvgl_port_lock();
         WIFI::instance().disconnect();
         char ssid = '\0';
-        ESP_LOGI(Tag, "Disconnecting");
+        ESP_LOGI(TAG, "Disconnecting");
         (static_cast<WifiConnection*>(context))->updateCurrentSSID(&ssid, 0);
         lvgl_port_unlock();
     }
@@ -195,7 +195,7 @@ void WifiConnection::connectButtonCallback(lv_event_t* e, void* _context)
     if (WIFI::instance().getAP(net->ssid, net->bssid, password, &auto_connect))
     {
         lvgl_port_lock();
-        ESP_LOGI(Tag, "connectButton AP found lock");
+        ESP_LOGI(TAG, "connectButton AP found lock");
         block->connect(net, password, auto_connect);
         lvgl_port_unlock();
         return;
@@ -254,10 +254,10 @@ void WifiConnection::connectButtonCallback(lv_event_t* e, void* _context)
         lv_coord_t target_y = ta_y + ta_h / 2 - scroll_h / 2;
 
         lv_obj_scroll_to_y(scrollable, target_y, LV_ANIM_OFF);
-        ESP_LOGI(Tag, "Scrolling to %d(%d, %d, %d)", target_y, ta_y, ta_h, scroll_h);
+        ESP_LOGI(TAG, "Scrolling to %d(%d, %d, %d)", target_y, ta_y, ta_h, scroll_h);
     } else
     {
-        ESP_LOGE(Tag, "Scrollable obj not found");
+        ESP_LOGE(TAG, "Scrollable obj not found");
     }
 
     lvgl_port_unlock();
@@ -267,9 +267,9 @@ void WifiConnection::connect(AccessPointItem* net, char* password, bool auto_con
 {
     currentAP          = net;
     WifiScreen& screen = WifiScreen::instance();
-    ESP_LOGI(Tag, "Connecting to %s (%02X:%02X:%02X:%02X:%02X:%02X), rssi: %d, pass: %s", net->ssid,
+    ESP_LOGI(TAG, "Connecting to %s (%02X:%02X:%02X:%02X:%02X:%02X), rssi: %d", net->ssid,
              net->bssid[0], net->bssid[1], net->bssid[2], net->bssid[3], net->bssid[4],
-             net->bssid[5], net->rssi, password);
+             net->bssid[5], net->rssi);
     net->select();
     if (textAreaPassword)
     {

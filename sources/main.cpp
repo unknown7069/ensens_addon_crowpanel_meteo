@@ -33,6 +33,9 @@ using namespace esp_panel::board;
 
 static const char* TAG = "main";
 
+// How long the main loop sleeps after a successful weather fetch.
+static constexpr uint32_t WeatherPollIntervalMs = 150000; // 2.5 minutes
+
 #define I2C_NUM I2C_NUM_0
 #define I2C_MASTER_SDA_IO GPIO_NUM_15 /*!< gpio number for I2C master clock */
 #define I2C_MASTER_SCL_IO GPIO_NUM_16 /*!< gpio number for I2C master data  */
@@ -74,7 +77,7 @@ extern "C" void app_main(void)
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND)
     {
-        ESP_LOGE(TAG, "mktime failed");
+        ESP_LOGE(TAG, "nvs_flash_init failed (%s), erasing NVS", esp_err_to_name(ret));
         ESP_ERROR_CHECK(nvs_flash_erase());
         ret = nvs_flash_init();
     }
@@ -99,7 +102,7 @@ extern "C" void app_main(void)
     Location::Data* location = static_cast<Location::Data*>(
         heap_caps_calloc(1, sizeof(Location::Data), MALLOC_CAP_SPIRAM));
 
-    TimeStamp::instance().init();
+    RtcClockUpdater::instance().init();
     UseCases::AccessPointsUpdate::instance().init();
 
      bool last_time_set = false;
@@ -112,21 +115,19 @@ extern "C" void app_main(void)
              WIFI::instance().waitForConnection();
              continue;
          }
-         if ((!connected) && (!CurrentTime::instance().isTimeSet()))
-         {
-             CurrentTime::instance().init();
-             if (CurrentTime::instance().sync())
-             {
-                 time_t    now = CurrentTime::instance().now();
-                 struct tm timeinfo;
-                 localtime_r(&now, &timeinfo);
-                 char strftime_buf[64];
-                 strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
-                 ESP_LOGI(TAG, "The current date/time is: %s", strftime_buf);
-
-                 TimeStamp::instance().is_sync_current_time = 1;
-             }
-         }
+          if ((!connected) && (!CurrentTime::instance().isTimeSet()))
+          {
+              CurrentTime::instance().init();
+              if (CurrentTime::instance().sync())
+              {
+                  time_t    now = CurrentTime::instance().now();
+                  struct tm timeinfo;
+                  localtime_r(&now, &timeinfo);
+                  char strftime_buf[64];
+                  strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
+                  ESP_LOGI(TAG, "The current date/time is: %s", strftime_buf);
+              }
+          }
          connected = true;
 
          bool time_is_set = CurrentTime::instance().isTimeSet();
@@ -145,9 +146,9 @@ extern "C" void app_main(void)
          WIFI::instance().getCurrentAP(ssid, &rssi);
          WifiScreen::instance().setSSID(ssid, rssi);
 
-         if (UseCases::WeatherUpdate::instance().update())
-         {
-             vTaskDelay(150000); // 2.5 minutes
-         }
+        if (UseCases::WeatherUpdate::instance().update())
+        {
+            vTaskDelay(pdMS_TO_TICKS(WeatherPollIntervalMs));
+        }
      }
 }

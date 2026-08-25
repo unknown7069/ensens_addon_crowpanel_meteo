@@ -36,7 +36,6 @@ target_compile_options(${COMPONENT_LIB} PRIVATE -Wno-missing-field-initializers)
 # the deprecation warning fires on every such call. Fixed upstream in LVGL v9.
 target_compile_options(${COMPONENT_LIB} PRIVATE
                        $<$<COMPILE_LANGUAGE:CXX>:-Wno-deprecated-enum-enum-conversion>)
-target_compile_definitions(${COMPONENT_LIB} PRIVATE COMMON_DEMO_APP)
 # The following code is to avoid the error:
 # lvgl_v8_port/managed_components/lvgl__lvgl/demos/stress/lv_demo_stress.c:92:29: error: format '%d' expects argument of
 # type 'int', but argument 6 has type 'uint32_t' {aka 'long unsigned int'} [-Werror=format=]

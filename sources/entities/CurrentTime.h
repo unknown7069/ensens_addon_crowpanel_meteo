@@ -6,8 +6,8 @@
 class CurrentTime
 {
     CurrentTime()          = default;
-    time_t _timestamp      = 0;
-    time_t _timezoneOffset = 0;
+    time_t timestamp_      = 0;
+    time_t timezoneOffset_ = 0;
 
 public:
     static CurrentTime& instance();

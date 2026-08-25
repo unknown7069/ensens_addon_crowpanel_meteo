@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "freertos/FreeRTOS.h"
 #include <esp_event.h>
@@ -8,33 +8,36 @@
 
 class HTTPRequest
 {
-    static constexpr char    Tag[] = "http-request";
-    EventGroupHandle_t       eventGroup;
-    char*                    buffer      = nullptr;
-    uint32_t                 bufferLen   = 0;
-    uint32_t                 receivedLen = 0;
-    char*                    url         = nullptr;
-    esp_http_client_method_t method;
-    const char*              certPem     = nullptr;
-    static esp_err_t         httpEventHandler(esp_http_client_event_t* evt)
+    static constexpr char     TAG[] = "http-request";
+    static constexpr uint32_t kFinishEventBit = 0x01;
+
+    EventGroupHandle_t       eventGroup_ = nullptr;
+    char*                    buffer_     = nullptr;
+    uint32_t                 bufferLen_   = 0;
+    uint32_t                 receivedLen_ = 0;
+    char*                    url_         = nullptr;
+    esp_http_client_method_t method_;
+    const char*              certPem_ = nullptr;
+
+    static esp_err_t httpEventHandler(esp_http_client_event_t* evt)
     {
         HTTPRequest* request = reinterpret_cast<HTTPRequest*>(evt->user_data);
         switch (evt->event_id)
         {
         case HTTP_EVENT_ON_DATA:
-            if (request->bufferLen < (request->receivedLen + evt->data_len))
+            if (request->bufferLen_ < (request->receivedLen_ + evt->data_len))
             {
-                ESP_LOGE(Tag, "not enough space");
+                ESP_LOGE(TAG, "not enough space");
                 break;
             }
-            memcpy(request->buffer + request->receivedLen, evt->data, evt->data_len);
-            request->receivedLen += evt->data_len;
+            memcpy(request->buffer_ + request->receivedLen_, evt->data, evt->data_len);
+            request->receivedLen_ += evt->data_len;
             break;
         case HTTP_EVENT_ON_FINISH: {
-            ESP_LOGD("OpenWeatherAPI", "Received data (%lu): %s", request->receivedLen,
-                     request->buffer);
+            ESP_LOGD(TAG, "Received data (%lu): %s", request->receivedLen_,
+                     request->buffer_);
 
-            xEventGroupSetBits(request->eventGroup, 0x01); // TODO:
+            xEventGroupSetBits(request->eventGroup_, kFinishEventBit);
 
             break;
         }
@@ -45,46 +48,53 @@ class HTTPRequest
     }
 
 public:
-    HTTPRequest(char* _url, esp_http_client_method_t _method, char* _buffer, uint32_t _bufferLen,
-                const char* _certPem = nullptr)
-        : buffer{ _buffer }, bufferLen{ _bufferLen }, url{ _url }, method{ _method },
-          certPem{ _certPem }
+    HTTPRequest(char* url, esp_http_client_method_t method, char* buffer, uint32_t bufferLen,
+                const char* certPem = nullptr)
+        : buffer_{ buffer }, bufferLen_{ bufferLen }, url_{ url }, method_{ method },
+          certPem_{ certPem }
     {
-        eventGroup = xEventGroupCreate();
+        eventGroup_ = xEventGroupCreate();
     }
     ~HTTPRequest()
     {
-        vEventGroupDelete(eventGroup);
+        vEventGroupDelete(eventGroup_);
     }
 
-    esp_err_t perform()
+    // Performs the request. Returns the number of bytes written to the response
+    // buffer, or -1 on failure.
+    int32_t perform()
     {
-        if (!url)
-            return false;
+        if (!url_)
+            return -1;
 
-        esp_err_t                retVal = ESP_OK;
         esp_http_client_config_t config = {};
-        config.url           = url;
-        config.method        = method;
+        config.url           = url_;
+        config.method        = method_;
         config.event_handler = httpEventHandler;
         config.user_data     = this;
-        config.cert_pem      = certPem;
-        receivedLen = 0;
+        config.cert_pem      = certPem_;
+        receivedLen_ = 0;
 
-        ESP_LOGD(Tag, "starting https request - %s", config.url);
+        ESP_LOGD(TAG, "starting https request - %s", config.url);
 
         esp_http_client_handle_t client = esp_http_client_init(&config);
+        if (client == nullptr)
+        {
+            ESP_LOGE(TAG, "esp_http_client_init failed");
+            return -1;
+        }
         esp_http_client_set_header(client, "Content-Type", "application/x-www-form-urlencoded");
-        retVal = esp_http_client_perform(client);
+        esp_err_t status = esp_http_client_perform(client);
 
-        if ((retVal != ESP_OK) ||
-            ((xEventGroupWaitBits(eventGroup, 0x01, pdFALSE, pdFALSE, portMAX_DELAY) & 0x01) ==
-             false))
-            ESP_LOGE(Tag, "esp_http_client_perform err(%d)", retVal);
-        else
-            retVal = receivedLen;
+        bool finished =
+            (status == ESP_OK) &&
+            ((xEventGroupWaitBits(eventGroup_, kFinishEventBit, pdFALSE, pdFALSE,
+                                  portMAX_DELAY) &
+              kFinishEventBit) != 0);
+        if (!finished)
+            ESP_LOGE(TAG, "esp_http_client_perform err(%d)", status);
 
         esp_http_client_cleanup(client);
-        return retVal;
+        return finished ? static_cast<int32_t>(receivedLen_) : -1;
     }
 };

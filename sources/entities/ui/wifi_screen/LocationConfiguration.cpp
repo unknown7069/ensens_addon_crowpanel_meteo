@@ -1,11 +1,7 @@
 #include "LocationConfiguration.h"
 #include "entities/WIFI.h"
 #include "entities/Weather.h"
-#ifdef COMMON_DEMO_APP
 #include "entities/ui/wifi_screen/WifiScreen.h"
-#else
-#include "entities/wifi_screen/WifiScreen.h"
-#endif
 #include <cstring>
 #include <esp_log.h>
 

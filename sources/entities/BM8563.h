@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "i2c_bus.h"
 #include <ctime>
@@ -59,5 +59,5 @@ private:
 
     i2c_bus_device_handle_t i2c_device_;
     static inline BM8563*   instance_ = nullptr;
-    bool                    is_need_update;
+    bool                    needs_update_;
 };

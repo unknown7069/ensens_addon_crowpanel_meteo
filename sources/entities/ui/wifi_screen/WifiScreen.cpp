@@ -1,28 +1,20 @@
-#include "WifiScreen.h"
+﻿#include "WifiScreen.h"
 #include "entities/Brightness.h"
 #include "entities/Location.h"
-#ifdef COMMON_DEMO_APP
 #include "entities/ui/Dashboard/Dashboard.h"
 #include "nvs.h"
 #include "nvs_flash.h"
-#endif
 #include "esp_heap_caps.h"
 
-#ifdef COMMON_DEMO_APP
 void WifiScreen::create(SensorSettings* sensorSettings, lv_obj_t* screen_)
 {
     createScreen(screen_);
-#else
-void WifiScreen::create(lv_obj_t* screen_)
-{
-    createScreen();
-#endif
     ui = new (heap_caps_malloc(sizeof(UI), MALLOC_CAP_SPIRAM)) UI;
     wifiConnectionBlock =
         new (heap_caps_malloc(sizeof(WifiConnection), MALLOC_CAP_SPIRAM)) WifiConnection;
     if (!ui || !wifiConnectionBlock)
     {
-        ESP_LOGE(Tag, "malloc failed");
+        ESP_LOGE(TAG, "malloc failed");
         return;
     }
     lock();
@@ -49,7 +41,6 @@ void WifiScreen::create(lv_obj_t* screen_)
         ui->menu.createRootPage("Settings");
         // menu.createRootPage(nullptr);
 
-#ifdef COMMON_DEMO_APP
         /*********************
          * UNITS CONFIGURATION
          */
@@ -64,13 +55,6 @@ void WifiScreen::create(lv_obj_t* screen_)
          * DATE AND TIME CONFIGURATION
          */
         ui->timestampBlock.create(ui->menu);
-#else
-
-        /*********************
-         * UNITS CONFIGURATION
-         */
-        ui->unitsBlock.create(ui->menu);
-#endif
 
         /*********************
          * BRIGHTNESS CONFIGURATION

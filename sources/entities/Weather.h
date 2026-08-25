@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include <stdint.h>
 
@@ -11,7 +11,7 @@
 class Weather
 {
     static constexpr uint16_t RequestBufferSize = 256;
-    static constexpr char     Tag[]             = "weather";
+    static constexpr char     TAG[]             = "weather";
     struct Ctx {
         char openWeatherDataBuffer[32768];
         char longitude[20];

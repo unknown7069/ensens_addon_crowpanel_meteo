@@ -22,14 +22,17 @@ class TimestampBlock
 
     BM8563::Time_t rtc_time_ = {};
 
-    void        setTimeLabels(BM8563::Time_t time);
-    void        decreaseHours();
-    void        decreaseMinutes();
-    void        decreaseSeconds();
-    void        increaseHours();
-    void        increaseMinutes();
-    void        increaseSeconds();
+    void setTimeLabels(BM8563::Time_t time);
+    void changeHours(int delta);
+    void changeMinutes(int delta);
+    void changeSeconds(int delta);
     static void calendarEventHandler(lv_event_t* e);
+
+    // Builds an up-button / value-label / down-button column shared by the
+    // hours, minutes and seconds spinners.
+    static lv_obj_t* createSpinnerColumn(lv_obj_t* parent, lv_obj_t** value_label,
+                                         void (*onUp)(lv_event_t*), void (*onDown)(lv_event_t*),
+                                         void* event_user_data);
 
 public:
     void create(Menu&);

@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "adapters/lvgl/Button.h"
 #include "adapters/lvgl/ExpandableBlock.h"
 #include "adapters/lvgl/FlexContainer.h"
@@ -8,7 +8,7 @@
 
 class BrightnessBlock
 {
-    static constexpr const char* Tag = "Brightness block";
+    static constexpr const char* TAG = "Brightness block";
     MenuPage               page;
     FlexContainer          spacer;
     FlexContainer          brightnessSwitchContainer;

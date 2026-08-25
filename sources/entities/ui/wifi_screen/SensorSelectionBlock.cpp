@@ -1,4 +1,4 @@
-#include "SensorSelectionBlock.h"
+﻿#include "SensorSelectionBlock.h"
 #include "entities/ui/Dashboard/Dashboard.h"
 
 void SensorSelectionBlock::create(Menu& menu_, SensorSettings* sensorSettings)
@@ -38,7 +38,7 @@ bool SensorSelectionBlock::saveSensorName(const char* sens_name)
     esp_err_t err = nvs_open("storage", NVS_READWRITE, &handle);
     if (err != ESP_OK)
     {
-        ESP_LOGE(Tag, "Failed to open NVS: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to open NVS: %s", esp_err_to_name(err));
         return false;
     }
 
@@ -47,18 +47,18 @@ bool SensorSelectionBlock::saveSensorName(const char* sens_name)
         err = nvs_erase_key(handle, "sensor_name");
         if (err == ESP_OK)
         {
-            ESP_LOGI(Tag, "Sensor name removed from NVS");
+            ESP_LOGI(TAG, "Sensor name removed from NVS");
             nvs_commit(handle);
             nvs_close(handle);
             return true;
         } else if (err == ESP_ERR_NVS_NOT_FOUND)
         {
-            ESP_LOGW(Tag, "Sensor name already cleared");
+            ESP_LOGW(TAG, "Sensor name already cleared");
             nvs_close(handle);
             return true;
         } else
         {
-            ESP_LOGE(Tag, "Failed to erase sensor_name: %s", esp_err_to_name(err));
+            ESP_LOGE(TAG, "Failed to erase sensor_name: %s", esp_err_to_name(err));
             nvs_close(handle);
             return false;
         }
@@ -67,7 +67,7 @@ bool SensorSelectionBlock::saveSensorName(const char* sens_name)
     err = nvs_set_str(handle, "sensor_name", sens_name);
     if (err != ESP_OK)
     {
-        ESP_LOGE(Tag, "Failed to set sensor_name: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to set sensor_name: %s", esp_err_to_name(err));
         nvs_close(handle);
         return false;
     }
@@ -76,11 +76,11 @@ bool SensorSelectionBlock::saveSensorName(const char* sens_name)
     nvs_close(handle);
     if (err != ESP_OK)
     {
-        ESP_LOGE(Tag, "Failed to commit sensor_name: %s", esp_err_to_name(err));
+        ESP_LOGE(TAG, "Failed to commit sensor_name: %s", esp_err_to_name(err));
         return false;
     }
 
-    ESP_LOGD(Tag, "Sensor name saved: %s", sens_name);
+    ESP_LOGD(TAG, "Sensor name saved: %s", sens_name);
     return true;
 }
 
@@ -90,7 +90,7 @@ bool SensorSelectionBlock::getSensorName()
 
     strcpy(saved_sens_name, "indoor\0");
 
-    ESP_LOGD(Tag, "Sensor name opened: %s", saved_sens_name);
+    ESP_LOGD(TAG, "Sensor name opened: %s", saved_sens_name);
     return retVal;
 }
 

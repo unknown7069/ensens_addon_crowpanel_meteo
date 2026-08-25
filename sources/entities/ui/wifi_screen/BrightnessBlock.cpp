@@ -1,4 +1,4 @@
-#include "BrightnessBlock.h"
+﻿#include "BrightnessBlock.h"
 #include "Brightness.h"
 #include <esp_log.h>
 
@@ -100,7 +100,7 @@ void BrightnessBlock::switchCallback(lv_event_t* e)
     lvgl_port_lock();
     bool             value = lv_obj_has_state(lv_event_get_current_target(e), LV_STATE_CHECKED);
     BrightnessBlock* self  = static_cast<BrightnessBlock*>(lv_event_get_user_data(e));
-    ESP_LOGD(Tag, "Auto brightness: %s", value ? "ON" : "OFF");
+    ESP_LOGD(TAG, "Auto brightness: %s", value ? "ON" : "OFF");
     self->setSliderDisabled(value);
     Brightness::instance().set(value, lv_slider_get_value(self->brightnessSlider));
     lvgl_port_unlock();
@@ -111,7 +111,7 @@ void BrightnessBlock::sliderCallback(lv_event_t* e)
     lvgl_port_lock();
     int              value = lv_slider_get_value(lv_event_get_current_target(e));
     BrightnessBlock* self  = static_cast<BrightnessBlock*>(lv_event_get_user_data(e));
-    ESP_LOGI(Tag, "Brightness: %d", value);
+    ESP_LOGI(TAG, "Brightness: %d", value);
     char text[10] = { 0 };
     snprintf(text, 10, "%d%%", value);
     self->brightnessManualValueLabel.setText(text);

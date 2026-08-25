@@ -1,13 +1,8 @@
 #pragma once
 
 #include "freertos/FreeRTOS.h"
-#ifdef COMMON_DEMO_APP
 #include "entities/ui/wifi_screen/WifiScreen.h"
 #include "entities/ui/wifi_screen/elements/AccessPointItem.h"
-#else
-#include "entities/wifi_screen/WifiScreen.h"
-#include "entities/wifi_screen/elements/AccessPointItem.h"
-#endif
 
 namespace UseCases
 {
@@ -16,12 +11,12 @@ class AccessPointsUpdate
     static constexpr int      TaskSize       = 4096;
     static constexpr int      TaskPriority   = 0;
     static constexpr const char*    TaskName       = "APUpd";
-    static constexpr const char*    Tag            = "AccessPointUpdate";
+    static constexpr const char*    TAG            = "AccessPointUpdate";
     static constexpr uint32_t UpdatePeriodMs = 60000;
 
-    TaskHandle_t                  taskHandle = nullptr;
+    TaskHandle_t                  taskHandle_ = nullptr;
     static void                   task(void*);
-    std::vector<AccessPointItem*> wifiList;
+    std::vector<AccessPointItem*> wifiList_;
 
 public:
     static AccessPointsUpdate& instance()

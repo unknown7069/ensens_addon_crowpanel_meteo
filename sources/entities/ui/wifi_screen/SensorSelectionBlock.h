@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 #include "adapters/lvgl/Button.h"
 #include "adapters/lvgl/ExpandableBlock.h"
 #include "adapters/lvgl/FlexContainer.h"
@@ -9,7 +9,7 @@
 
 class SensorSelectionBlock : public LvglObject
 {
-    static constexpr const char* Tag = "SensorSelection";
+    static constexpr const char* TAG = "SensorSelection";
     FlexContainer          spacer;
 
     static constexpr uint8_t MaxSensorNameLength = 20;

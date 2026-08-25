@@ -1,9 +1,5 @@
 #include "AccessPointItem.h"
-#ifdef COMMON_DEMO_APP
 #include "entities/ui/wifi_screen/WifiScreen.h"
-#else
-#include "entities/wifi_screen/WifiScreen.h"
-#endif
 
 LV_IMG_DECLARE(wifi_100);
 LV_IMG_DECLARE(wifi_75);

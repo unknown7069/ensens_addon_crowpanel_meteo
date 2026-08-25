@@ -1,4 +1,4 @@
-#include "Brightness.h"
+﻿#include "Brightness.h"
 #include "entities/CurrentTime.h"
 #include "entities/ui/wifi_screen/WifiScreen.h"
 #include "esp_log.h"
@@ -33,7 +33,7 @@ void Brightness::setMaskOpacity(uint8_t percent)
         return;
     if (percent > 100)
         percent = 100;
-    _level = percent;
+    level_ = percent;
 
     uint8_t opa = 255 - (percent * 255 / 100);
     lvgl_port_lock();
@@ -45,39 +45,39 @@ bool Brightness::init()
 {
     nvs_handle_t nvsHandle;
     bool         retVal = true;
-    _level              = DefaultValueWhenNotConfigured;
-    _autoUpdate         = true;
+    level_              = DefaultValueWhenNotConfigured;
+    autoUpdate_         = true;
 
     if (nvs_open("storage", NVS_READWRITE, &nvsHandle) != ESP_OK)
     {
-        ESP_LOGE(Tag, "error nvs_open()");
+        ESP_LOGE(TAG, "error nvs_open()");
         retVal = false;
     } else
     {
         uint8_t storedLevel = 100;
         if (nvs_get_u8(nvsHandle, "brightness", &storedLevel) == ESP_OK)
         {
-            _autoUpdate = false;
-            _level      = storedLevel;
-            ESP_LOGI(Tag, "Loaded user brightness level: %d", _level);
+            autoUpdate_ = false;
+            level_      = storedLevel;
+            ESP_LOGI(TAG, "Loaded user brightness level: %d", level_);
         } else
-            ESP_LOGI(Tag, "Brightness not set, use auto, default: %d", _level);
+            ESP_LOGI(TAG, "Brightness not set, use auto, default: %d", level_);
 
         nvs_close(nvsHandle);
     }
 
      createMask();
 
-     brightnessTimer = lv_timer_create(brightnessTimerCallback, 3600000, NULL);
+     brightnessTimer = lv_timer_create(brightnessTimerCallback, AutoUpdatePeriodMs, NULL);
      if (brightnessTimer == NULL) {
-         ESP_LOGE(Tag, "Failed to create brightness timer");
+         ESP_LOGE(TAG, "Failed to create brightness timer");
      }
 
-     if (_autoUpdate) {
+     if (autoUpdate_) {
          update();
      } else {
-         setMaskOpacity(_level);
-         WifiScreen::instance().setBrightness(_autoUpdate, _level);
+         setMaskOpacity(level_);
+         WifiScreen::instance().setBrightness(autoUpdate_, level_);
      }
 
     return retVal;
@@ -87,8 +87,8 @@ bool Brightness::set(bool isAuto, uint8_t percent)
 {
     bool retVal = true;
 
-    _level      = percent;
-    _autoUpdate = isAuto;
+    level_      = percent;
+    autoUpdate_ = isAuto;
 
     if (isAuto)
     {
@@ -96,10 +96,10 @@ bool Brightness::set(bool isAuto, uint8_t percent)
         if ((nvs_open("storage", NVS_READWRITE, &nvsHandle) != ESP_OK) ||
             (nvs_erase_key(nvsHandle, "brightness") != ESP_OK) || (nvs_commit(nvsHandle) != ESP_OK))
         {
-            ESP_LOGE(Tag, "Failed to erase brightness key");
+            ESP_LOGE(TAG, "Failed to erase brightness key");
             retVal = false;
         } else
-            ESP_LOGD(Tag, "Switched to auto brightness mode");
+            ESP_LOGD(TAG, "Switched to auto brightness mode");
          nvs_close(nvsHandle);
          update();
     } else
@@ -109,25 +109,25 @@ bool Brightness::set(bool isAuto, uint8_t percent)
             (nvs_set_u8(nvsHandle, "brightness", percent) != ESP_OK) ||
             (nvs_commit(nvsHandle) != ESP_OK))
         {
-            ESP_LOGE(Tag, "Failed to save brightness");
+            ESP_LOGE(TAG, "Failed to save brightness");
             retVal = false;
         } else
         {
-            ESP_LOGI(Tag, "New manully configured brightness stored");
+            ESP_LOGI(TAG, "New manually configured brightness stored");
         }
         nvs_close(nvsHandle);
 
-        setMaskOpacity(_level);
-        ESP_LOGI(Tag, "Brightness manually configured %d", _level);
+        setMaskOpacity(level_);
+        ESP_LOGI(TAG, "Brightness manually configured %d", level_);
 
-        WifiScreen::instance().setBrightness(_autoUpdate, _level);
+        WifiScreen::instance().setBrightness(autoUpdate_, level_);
     }
     return retVal;
 }
 
 bool Brightness::update()
 {
-    if (!_autoUpdate)
+    if (!autoUpdate_)
         return true;
 
     bool timeConfigured = CurrentTime::instance().isTimeSet();
@@ -135,35 +135,32 @@ bool Brightness::update()
 
     if (timeConfigured)
     {
-        // 06:00–18:00 — 100%
-        // 18:00–22:00 — 60%
-        // 22:00–06:00 — 20%
         time_t    now = CurrentTime::instance().nowLocal();
         struct tm timeinfo;
         localtime_r(&now, &timeinfo);
 
         int hour = timeinfo.tm_hour;
-        if (hour >= 6 && hour < 18)
+        if (hour >= DayStartHour && hour < EveningStartHour)
         {
-            calculatedBrightness = 100;
-        } else if (hour >= 18 && hour < 22)
+            calculatedBrightness = DayBrightnessPercent;
+        } else if (hour >= EveningStartHour && hour < NightStartHour)
         {
-            calculatedBrightness = 60;
+            calculatedBrightness = EveningBrightnessPercent;
         } else
         {
-            calculatedBrightness = 20;
+            calculatedBrightness = NightBrightnessPercent;
         }
 
-        ESP_LOGD(Tag, "Auto brightness based on time(%02d): %d", hour, calculatedBrightness);
+        ESP_LOGD(TAG, "Auto brightness based on time(%02d): %d", hour, calculatedBrightness);
     } else
     {
         calculatedBrightness = DefaultValueWhenNotConfigured;
-        ESP_LOGI(Tag, "Time not configured, using default: %d", calculatedBrightness);
+        ESP_LOGI(TAG, "Time not configured, using default: %d", calculatedBrightness);
     }
 
-    _level = calculatedBrightness;
-    setMaskOpacity(_level);
-    WifiScreen::instance().setBrightness(_autoUpdate, _level);
+    level_ = calculatedBrightness;
+    setMaskOpacity(level_);
+    WifiScreen::instance().setBrightness(autoUpdate_, level_);
 
     return true;
 }
@@ -172,12 +169,12 @@ bool Brightness::get(bool* isAuto, uint8_t* percent)
 {
     if (!isAuto || !percent)
     {
-        ESP_LOGE(Tag, "percent pointer is null");
+        ESP_LOGE(TAG, "percent pointer is null");
         return false;
     }
 
-    *isAuto  = _autoUpdate;
-    *percent = _level;
+    *isAuto  = autoUpdate_;
+    *percent = level_;
 
     return true;
 }

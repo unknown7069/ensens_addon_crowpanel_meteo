@@ -6,7 +6,7 @@ bool AccessPointsUpdate::init()
 {
     if (xTaskCreateWithCaps(AccessPointsUpdate::task, AccessPointsUpdate::TaskName,
                             AccessPointsUpdate::TaskSize, this, AccessPointsUpdate::TaskPriority,
-                            &taskHandle, MALLOC_CAP_SPIRAM) != pdTRUE)
+                            &taskHandle_, MALLOC_CAP_SPIRAM) != pdTRUE)
         return false;
 
     return true;
@@ -32,7 +32,7 @@ void AccessPointsUpdate::task(void* arg)
         WIFI::instance().scan();
         WIFI::instance().getScannedAP(&ap_records, &ap_num);
         std::vector<std::string> found_ssids;
-        ESP_LOGD(Tag, "found - %d", ap_num);
+        ESP_LOGD(TAG, "found - %d", ap_num);
 
         std::vector<WIFI::APInfo> savedAPs;
         WIFI::instance().getSavedAPs(savedAPs);
@@ -48,7 +48,7 @@ void AccessPointsUpdate::task(void* arg)
                 continue;
             found_ssids.push_back(ssid);
             bool updated = false;
-            for (auto& net : usecase->wifiList)
+            for (auto& net : usecase->wifiList_)
             {
                 if (strcmp(net->ssid, ssid) == 0)
                 {
@@ -61,17 +61,20 @@ void AccessPointsUpdate::task(void* arg)
 
             if (!updated)
             {
-                void*            buffer = heap_caps_aligned_calloc(alignof(AccessPointItem), 1,
-                                                                   sizeof(AccessPointItem), MALLOC_CAP_SPIRAM);
+                void* buffer = heap_caps_aligned_calloc(alignof(AccessPointItem), 1,
+                                                        sizeof(AccessPointItem), MALLOC_CAP_SPIRAM);
+                if (buffer == nullptr)
+                {
+                    ESP_LOGE(TAG, "Failed to allocate AccessPointItem");
+                    continue;
+                }
                 AccessPointItem* net =
                     new (buffer) AccessPointItem(ssid, rssi, ap_records[i].bssid);
-                if (net == nullptr)
-                    continue;
-                usecase->wifiList.emplace_back(net);
+                usecase->wifiList_.emplace_back(net);
                 lvgl_port_lock(-1);
                 net->show(WifiScreen::instance().getAvailableWIFIList());
                 lvgl_port_unlock();
-                ESP_LOGD(Tag, "%s(BSSID: %02x:%02x:%02x:%02x:%02x:%02x), rssi - %d", net->ssid,
+                ESP_LOGD(TAG, "%s(BSSID: %02x:%02x:%02x:%02x:%02x:%02x), rssi - %d", net->ssid,
                          net->bssid[0], net->bssid[1], net->bssid[2], net->bssid[3], net->bssid[4],
                          net->bssid[5], net->rssi);
             }
@@ -87,12 +90,12 @@ void AccessPointsUpdate::task(void* arg)
 
         for (auto& ap : savedAPs)
             ESP_LOGD(
-                Tag,
-                "AP (auto) SSID: %s (BSSID: %02x:%02x:%02x:%02x:%02x:%02x), auto - %d, PASS: %s",
-                ap.ssid, ap.bssid[0], ap.bssid[1], ap.bssid[2], ap.bssid[3], ap.bssid[4],
-                ap.bssid[5], ap.auto_connect, ap.pass);
+                TAG,
+                "AP (auto) SSID: %s (BSSID: %02x:%02x:%02x:%02x:%02x:%02x), auto - %d",
+                ap.ssid, ap.bssid[0], ap.bssid[1], ap.bssid[2], ap.bssid[3],
+                ap.bssid[4], ap.bssid[5], ap.auto_connect);
 
-        usecase->wifiList.erase(std::remove_if(usecase->wifiList.begin(), usecase->wifiList.end(),
+        usecase->wifiList_.erase(std::remove_if(usecase->wifiList_.begin(), usecase->wifiList_.end(),
                                                [&](AccessPointItem* net) {
                                                    bool found =
                                                        std::find(found_ssids.begin(),
@@ -108,14 +111,14 @@ void AccessPointsUpdate::task(void* arg)
                                                    }
                                                    return false;
                                                }),
-                                usecase->wifiList.end());
+                                usecase->wifiList_.end());
 
         if (bestAutoconnect && !WIFI::instance().isConnected())
         {
-            ESP_LOGD(Tag, "Autoconnect to best SSID: %s (rssi: %d)", bestAutoconnect->ssid,
+            ESP_LOGD(TAG, "Autoconnect to best SSID: %s (rssi: %d)", bestAutoconnect->ssid,
                      bestRSSI);
             AccessPointItem* netToConnect = nullptr;
-            for (auto& net : usecase->wifiList)
+            for (auto& net : usecase->wifiList_)
             {
                 if (memcmp(net->bssid, bestAutoconnect->bssid, 6) == 0)
                 {

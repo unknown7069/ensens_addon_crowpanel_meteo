@@ -1,4 +1,4 @@
-#include "Weather.h"
+﻿#include "Weather.h"
 #include "adapters/HTTPRequest.h"
 #include "../certs/OpenWeatherCACert.h"
 #include "esp_heap_caps.h"
@@ -35,15 +35,17 @@ char* urlEncode(const char* input)
 Weather::Weather()
 {
     ctx_ = static_cast<Ctx*>(heap_caps_malloc(sizeof(Ctx), MALLOC_CAP_SPIRAM));
-    if (ctx_ != nullptr)
+    if (ctx_ == nullptr)
     {
-        memset(ctx_, 0, sizeof(Ctx));
+        ESP_LOGE(TAG, "Failed to allocate weather context");
+        return;
     }
+    memset(ctx_, 0, sizeof(Ctx));
 }
 
 bool Weather::getCurrentWeather(Data* data)
 {
-    if (!data)
+    if (!data || !ctx_)
         return false;
 
     data->precipitation = std::numeric_limits<float>::quiet_NaN();
@@ -51,7 +53,7 @@ bool Weather::getCurrentWeather(Data* data)
     if ((ctx_->latitude[0] != '\0') && (ctx_->longitude[0] != '\0'))
         snprintf(ctx_->requestURL, sizeof(ctx_->requestURL), "%slat=%s&lon=%s&appid=%s",
                  WEATHER_URL, ctx_->latitude, ctx_->longitude, WEATHER_API_KEY);
-    else if (ctx_->locationName[0] != '0')
+    else if (ctx_->locationName[0] != '\0')
     {
         char* encodedCity = urlEncode(ctx_->locationName);
         if (!encodedCity)
@@ -62,7 +64,7 @@ bool Weather::getCurrentWeather(Data* data)
         free(encodedCity);
     } else
     {
-        ESP_LOGE(Tag, "Location not ready");
+        ESP_LOGE(TAG, "Location not ready");
         return false;
     }
 
@@ -71,7 +73,7 @@ bool Weather::getCurrentWeather(Data* data)
 
     jparse_ctx_t jctx;
     int          numCnt = 0;
-    uint32_t     receivedLen = 0;
+    int32_t      receivedLen = 0;
     bool         retVal = true;
     int64_t      timestamp;
     int64_t      timezone;
@@ -107,7 +109,7 @@ bool Weather::getCurrentWeather(Data* data)
         (json_obj_get_int64(&jctx, "timezone", &timezone) == OS_SUCCESS) &&
         (json_obj_get_string(&jctx, "name", data->city, sizeof(data->city)) == OS_SUCCESS))
     {
-        ESP_LOGD(Tag, "Parsed: %.1f, %.1f, %.1f, %s,", data->temperature, data->humidity,
+        ESP_LOGD(TAG, "Parsed: %.1f, %.1f, %.1f, %s,", data->temperature, data->humidity,
                  data->pressure, data->description);
         auto clampToUint32 = [](int64_t value) -> uint32_t {
             if (value < 0)
@@ -121,7 +123,7 @@ bool Weather::getCurrentWeather(Data* data)
         data->timestampOffset  = static_cast<int32_t>(timezone);
         data->sunriseTimestamp = clampToUint32(sunrise + timezone);
         data->sunsetTimestamp  = clampToUint32(sunset + timezone);
-        ESP_LOGI(Tag, "%lu, %ld, %s, %s", data->timestamp,
+        ESP_LOGI(TAG, "%lu, %ld, %s, %s", data->timestamp,
                  static_cast<long>(data->timestampOffset), data->city,
                  data->country);
 
@@ -153,7 +155,7 @@ bool Weather::getCurrentWeather(Data* data)
         data->precipitation = precipFound ? precipitation : 0.0f;
     } else
     {
-        ESP_LOGE(Tag, "Parser failed: objects");
+        ESP_LOGE(TAG, "Parser failed: objects");
         retVal = false;
     }
     json_parse_end(&jctx);
@@ -187,16 +189,19 @@ bool Weather::getCurrentWeather(Data* data)
 
 void Weather::setLocation(char* lat, char* lon, char* name)
 {
-    if (!lat || !lon)
+    if (!ctx_ || !lat || !lon || !name)
         return;
-    strncpy(ctx_->latitude, lat, sizeof(ctx_->latitude));
-    strncpy(ctx_->longitude, lon, sizeof(ctx_->longitude));
-    strncpy(ctx_->locationName, name, sizeof(ctx_->locationName));
+    strncpy(ctx_->latitude, lat, sizeof(ctx_->latitude) - 1);
+    ctx_->latitude[sizeof(ctx_->latitude) - 1] = '\0';
+    strncpy(ctx_->longitude, lon, sizeof(ctx_->longitude) - 1);
+    ctx_->longitude[sizeof(ctx_->longitude) - 1] = '\0';
+    strncpy(ctx_->locationName, name, sizeof(ctx_->locationName) - 1);
+    ctx_->locationName[sizeof(ctx_->locationName) - 1] = '\0';
 }
 
 bool Weather::checkLocation(char* name)
 {
-    if (!name)
+    if (!name || !ctx_)
         return false;
 
     if (name[0] == '\0')
@@ -211,7 +216,7 @@ bool Weather::checkLocation(char* name)
         static_cast<char*>(heap_caps_malloc(RequestBufferSize, MALLOC_CAP_SPIRAM));
     if (!requestBuffer)
     {
-        ESP_LOGE(Tag, "Malloc request failed");
+        ESP_LOGE(TAG, "Malloc request failed");
         free(encodedCity);
         return false;
     }
@@ -221,7 +226,7 @@ bool Weather::checkLocation(char* name)
     {
         free(encodedCity);
         free(requestBuffer);
-        ESP_LOGE(Tag, "Malloc response failed");
+        ESP_LOGE(TAG, "Malloc response failed");
         return false;
     }
 
@@ -233,16 +238,16 @@ bool Weather::checkLocation(char* name)
                         OpenWeatherRootCACert);
 
     jparse_ctx_t jctx;
-    uint32_t     receivedLen;
+    int32_t      receivedLen;
     bool         retVal = true;
     int          code   = 0;
     if (((receivedLen = request.perform()) > 0) &&
         (json_parse_start(&jctx, responseBuffer, receivedLen) == OS_SUCCESS) &&
         (json_obj_get_int(&jctx, "cod", &code) == OS_SUCCESS) && (code == 200))
-        ESP_LOGI(Tag, "Location is correct, code - %d", code);
+        ESP_LOGI(TAG, "Location is correct, code - %d", code);
     else
     {
-        ESP_LOGI(Tag, "Location not found, code - %d", code);
+        ESP_LOGI(TAG, "Location not found, code - %d", code);
         retVal = false;
     }
     json_parse_end(&jctx);

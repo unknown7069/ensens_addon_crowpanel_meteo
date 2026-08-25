@@ -59,8 +59,9 @@ bool DailyMetricHistory::store(const EnvironmentalSensor::DataSample<float>& sam
     return false;
 }
 
-DailyMetricHistory* Aggregator::getIndoorMetricHistory(IndoorDailyMetrics& metrics,
-                                                       EnvironmentalSensor::Parameters param)
+const DailyMetricHistory*
+Aggregator::getIndoorMetricHistory(const IndoorDailyMetrics& metrics,
+                                   EnvironmentalSensor::Parameters param) const
 {
     switch (param)
     {
@@ -81,25 +82,88 @@ DailyMetricHistory* Aggregator::getIndoorMetricHistory(IndoorDailyMetrics& metri
     }
 }
 
-const DailyMetricHistory* Aggregator::getIndoorMetricHistory(const IndoorDailyMetrics& metrics,
-                                                             EnvironmentalSensor::Parameters param) const
+DailyMetricHistory* Aggregator::getIndoorMetricHistory(IndoorDailyMetrics& metrics,
+                                                       EnvironmentalSensor::Parameters param)
 {
+    return const_cast<DailyMetricHistory*>(
+        getIndoorMetricHistory(static_cast<const IndoorDailyMetrics&>(metrics), param));
+}
+
+// Pushes a realtime sample to whichever Dashboard label shows this metric.
+// The per-metric Dashboard methods differ in unit handling and quality colors,
+// so dispatch on the parameter here.
+static void publishMetricToDashboard(const std::string&                    dev_name,
+                                     EnvironmentalSensor::Parameters       param,
+                                     float                                 value)
+{
+    Dashboard& dashboard = Dashboard::instance();
     switch (param)
     {
     case EnvironmentalSensor::Temperature:
-        return &metrics.temperature;
+        dashboard.updateTemperature(dev_name, value);
+        break;
     case EnvironmentalSensor::Humidity:
-        return &metrics.humidity;
+        dashboard.updateHumidity(dev_name, value);
+        break;
     case EnvironmentalSensor::Pressure:
-        return &metrics.pressure;
+        dashboard.updatePressure(dev_name, value);
+        break;
     case EnvironmentalSensor::CO2:
-        return &metrics.co2;
+        dashboard.updateCO2(dev_name, static_cast<uint16_t>(value));
+        break;
     case EnvironmentalSensor::VOC:
-        return &metrics.voc;
+        dashboard.updateVOC(dev_name, static_cast<uint16_t>(value));
+        break;
     case EnvironmentalSensor::IAQ:
-        return &metrics.iaq;
+        dashboard.updateIAQ(dev_name, static_cast<uint16_t>(value));
+        break;
     default:
-        return nullptr;
+        break;
+    }
+}
+
+template <typename SelectBuffer>
+void Aggregator::handleRealtimeSample(const std::string& dev_name,
+                                      EnvironmentalSensor::Parameters param,
+                                      SelectBuffer select_buffer, bool apply_unit_conversion,
+                                      const Sample& incoming)
+{
+    bool refresh_plot       = false;
+    bool is_selected_sensor = false;
+
+    {
+        MutexGuard lg(mutex_);
+        RealtimeData& rt_data = sensor_data_db_[dev_name];
+
+        Sample sample = incoming;
+        // Sensor values arrive in base units (Celsius/Pa); convert to the units
+        // selected in settings before storing or displaying.
+        if (apply_unit_conversion)
+        {
+            const UnitType display_unit = (param == EnvironmentalSensor::Temperature)
+                                              ? sensor_settings_.temperature
+                                              : sensor_settings_.pressure;
+            convertToUnit(display_unit, sample);
+        }
+
+        // History replays are only kept in the daily history below, never shown
+        // as realtime data.
+        if (sample.flags.is_history())
+            return;
+
+        auto& buffer = select_buffer(rt_data);
+
+        if (buffer.empty() || buffer.back_ref().value != sample.value)
+            publishMetricToDashboard(dev_name, param, sample.value);
+
+        buffer.push(sample);
+        refresh_plot       = storeIndoorMetric(dev_name, param, sample);
+        is_selected_sensor = (dev_name == sensor_settings_.sensor_name);
+    }
+
+    if (refresh_plot && is_selected_sensor)
+    {
+        Dashboard::instance().handleIndoorMetricUpdate(dev_name, param);
     }
 }
 
@@ -111,7 +175,7 @@ bool Aggregator::storeIndoorMetric(const std::string& dev_name, EnvironmentalSen
     if (sample.flags.is_history())
         return false;
 
-    IndoorDailyMetrics& metrics = indoor_daily_metrics_db[dev_name];
+    IndoorDailyMetrics& metrics = indoor_daily_metrics_db_[dev_name];
     DailyMetricHistory* history = getIndoorMetricHistory(metrics, param);
     if (history == nullptr)
         return false;
@@ -132,251 +196,143 @@ bool Aggregator::isIndoorSensor(const std::string& dev_name) const
 int Aggregator::create()
 {
     ESP_LOGD(TAG, "RT_DATA_RING_BUFFER_SIZE=%d", RT_DATA_RING_BUFFER_SIZE);
-    mutex = xSemaphoreCreateMutex();
+    mutex_ = xSemaphoreCreateMutex();
 
     ui_styles_init();
-    Dashboard::instance().create(&sensor_settings, lv_scr_act());
+    Dashboard::instance().create(&sensor_settings_, lv_scr_act());
     return 0;
 }
 
 void Aggregator::addBatteryData(const std::string& dev_name, uint8_t battery)
 {
-    lock_guard lg(mutex);
-    sensor_data_db[dev_name].battery = battery;
+    MutexGuard lg(mutex_);
+    sensor_data_db_[dev_name].battery = battery;
 }
 
-void Aggregator::addTemperatureData(const std::string&                     dev_name,
-                                    EnvironmentalSensor::DataSample<float> temp)
+void Aggregator::addTemperatureData(const std::string& dev_name, Sample temp)
 {
-    bool refresh_plot       = false;
-    bool is_selected_sensor = false;
-
-    {
-        lock_guard                             lg(mutex);
-        RealtimeData&                          rt_data    = sensor_data_db[dev_name];
-
-        convertToUnit(sensor_settings.temperature, temp);
-
-        if (rt_data.temperature.empty() || rt_data.temperature.back_ref().value != temp.value)
-        {
-            Dashboard::instance().updateTemperature(dev_name, temp.value);
-        }
-
-        rt_data.temperature.push(temp);
-        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::Temperature, temp);
-        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
-    }
-
-    if (refresh_plot && is_selected_sensor)
-    {
-        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::Temperature);
-    }
+    handleRealtimeSample(dev_name, EnvironmentalSensor::Temperature,
+                         [](RealtimeData& d) -> auto& { return d.temperature; }, true, temp);
 }
 
-void Aggregator::addHumidityData(const std::string&                     dev_name,
-                                 EnvironmentalSensor::DataSample<float> humi)
+void Aggregator::addHumidityData(const std::string& dev_name, Sample humi)
 {
-    bool refresh_plot       = false;
-    bool is_selected_sensor = false;
-
-    {
-        lock_guard                             lg(mutex);
-        RealtimeData&                          rt_data    = sensor_data_db[dev_name];
-
-        if (rt_data.humidity.empty() || rt_data.humidity.back_ref().value != humi.value)
-        {
-            Dashboard::instance().updateHumidity(dev_name, humi.value);
-        }
-
-        rt_data.humidity.push(humi);
-        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::Humidity, humi);
-        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
-    }
-
-    if (refresh_plot && is_selected_sensor)
-    {
-        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::Humidity);
-    }
+    handleRealtimeSample(dev_name, EnvironmentalSensor::Humidity,
+                         [](RealtimeData& d) -> auto& { return d.humidity; }, false, humi);
 }
 
-void Aggregator::addPressureData(const std::string&                     dev_name,
-                                 EnvironmentalSensor::DataSample<float> pressure)
+void Aggregator::addPressureData(const std::string& dev_name, Sample pressure)
 {
-    bool refresh_plot       = false;
-    bool is_selected_sensor = false;
-
-    {
-        lock_guard    lg(mutex);
-        RealtimeData& rt_data = sensor_data_db[dev_name];
-
-        convertToUnit(sensor_settings.pressure, pressure);
-
-        if (pressure.flags.is_history())
-        {
-            return;
-        }
-
-        if (rt_data.pressure.empty() || rt_data.pressure.back_ref().value != pressure.value)
-        {
-            Dashboard::instance().updatePressure(dev_name, pressure.value);
-        }
-
-        rt_data.pressure.push(pressure);
-        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::Pressure, pressure);
-        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
-    }
-
-    if (refresh_plot && is_selected_sensor)
-    {
-        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::Pressure);
-    }
+    handleRealtimeSample(dev_name, EnvironmentalSensor::Pressure,
+                         [](RealtimeData& d) -> auto& { return d.pressure; }, true, pressure);
 }
 
-void Aggregator::addCO2Data(const std::string& dev_name, EnvironmentalSensor::DataSample<float> co2)
+void Aggregator::addCO2Data(const std::string& dev_name, Sample co2)
 {
-    bool refresh_plot       = false;
-    bool is_selected_sensor = false;
-
-    {
-        lock_guard                             lg(mutex);
-        RealtimeData&                          rt_data    = sensor_data_db[dev_name];
-        if (rt_data.co2.empty() || rt_data.co2.back_ref().value != co2.value)
-        {
-            Dashboard::instance().updateCO2(dev_name, co2.value);
-        }
-
-        rt_data.co2.push(co2);
-        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::CO2, co2);
-        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
-    }
-
-    if (refresh_plot && is_selected_sensor)
-    {
-        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::CO2);
-    }
+    handleRealtimeSample(dev_name, EnvironmentalSensor::CO2,
+                         [](RealtimeData& d) -> auto& { return d.co2; }, false, co2);
 }
 
-void Aggregator::addVOCData(const std::string& dev_name, EnvironmentalSensor::DataSample<float> voc)
+void Aggregator::addVOCData(const std::string& dev_name, Sample voc)
 {
-    bool refresh_plot       = false;
-    bool is_selected_sensor = false;
-
-    {
-        lock_guard                             lg(mutex);
-        RealtimeData&                          rt_data    = sensor_data_db[dev_name];
-        if (rt_data.voc.empty() || rt_data.voc.back_ref().value != voc.value)
-        {
-            Dashboard::instance().updateVOC(dev_name, voc.value);
-        }
-
-        rt_data.voc.push(voc);
-        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::VOC, voc);
-        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
-    }
-
-    if (refresh_plot && is_selected_sensor)
-    {
-        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::VOC);
-    }
+    handleRealtimeSample(dev_name, EnvironmentalSensor::VOC,
+                         [](RealtimeData& d) -> auto& { return d.voc; }, false, voc);
 }
 
-void Aggregator::addIAQData(const std::string& dev_name, EnvironmentalSensor::DataSample<float> iaq)
+void Aggregator::addIAQData(const std::string& dev_name, Sample iaq)
 {
-    bool refresh_plot       = false;
-    bool is_selected_sensor = false;
-
-    {
-        lock_guard                             lg(mutex);
-        RealtimeData&                          rt_data    = sensor_data_db[dev_name];
-        if (rt_data.iaq.empty() || rt_data.iaq.back_ref().value != iaq.value)
-        {
-            Dashboard::instance().updateIAQ(dev_name, iaq.value);
-        }
-
-        rt_data.iaq.push(iaq);
-        refresh_plot       = storeIndoorMetric(dev_name, EnvironmentalSensor::IAQ, iaq);
-        is_selected_sensor = (dev_name == sensor_settings.sensor_name);
-    }
-
-    if (refresh_plot && is_selected_sensor)
-    {
-        Dashboard::instance().handleIndoorMetricUpdate(dev_name, EnvironmentalSensor::IAQ);
-    }
+    handleRealtimeSample(dev_name, EnvironmentalSensor::IAQ,
+                         [](RealtimeData& d) -> auto& { return d.iaq; }, false, iaq);
 }
 
 void Aggregator::addDevice(const std::string& dev_name)
 {
-    if (sensor_data_db.contains(dev_name))
-        return;
-
     std::vector<std::string> device_names;
-    device_names.reserve(sensor_data_db.size() + 1);
-    for (const auto& [key, value] : sensor_data_db)
     {
-        device_names.push_back(key);
+        MutexGuard lg(mutex_);
+        if (sensor_data_db_.contains(dev_name))
+            return;
+
+        device_names.reserve(sensor_data_db_.size());
+        for (const auto& [key, value] : sensor_data_db_)
+        {
+            device_names.push_back(key);
+        }
     }
     device_names.push_back(dev_name);
     WifiScreen::instance().updateSensorNames(device_names);
 }
 
-bool Aggregator::getTemperatureData(const std::string&                      dev_name,
-                                    EnvironmentalSensor::DataSample<float>& data)
+template <typename SelectBuffer>
+bool Aggregator::latestSample(const std::string& dev_name, SelectBuffer select_buffer, Sample& data)
 {
-    auto temperature = sensor_data_db[dev_name].temperature;
-    if (temperature.empty())
+    MutexGuard lg(mutex_);
+
+    auto db_it = sensor_data_db_.find(dev_name);
+    if (db_it == sensor_data_db_.end())
         return false;
-    data = temperature.back_ref();
+
+    auto& buffer = select_buffer(db_it->second);
+    if (buffer.empty())
+        return false;
+
+    data = buffer.back_ref();
     return true;
 }
 
-bool Aggregator::getHumidityData(const std::string&                      dev_name,
-                                 EnvironmentalSensor::DataSample<float>& data)
+template <typename SelectBuffer>
+bool Aggregator::setLatestSample(const std::string& dev_name, SelectBuffer select_buffer,
+                                 const Sample& data)
 {
-    auto humidity = sensor_data_db[dev_name].humidity;
-    if (humidity.empty())
+    MutexGuard lg(mutex_);
+
+    auto db_it = sensor_data_db_.find(dev_name);
+    if (db_it == sensor_data_db_.end())
         return false;
-    data = humidity.back_ref();
+
+    auto& buffer = select_buffer(db_it->second);
+    if (buffer.empty())
+        return false;
+
+    buffer.back_ref() = data;
     return true;
 }
 
-bool Aggregator::getPressureData(const std::string&                      dev_name,
-                                 EnvironmentalSensor::DataSample<float>& data)
+template <typename SelectBuffer>
+float Aggregator::latestValueOrZero(const std::string& dev_name, SelectBuffer select_buffer)
 {
-    auto pressure = sensor_data_db[dev_name].pressure;
-    if (pressure.empty())
-        return false;
-    data = pressure.back_ref();
-    return true;
+    Sample sample;
+    return latestSample(dev_name, select_buffer, sample) ? sample.value : 0.0f;
 }
 
-bool Aggregator::getCO2Data(const std::string&                      dev_name,
-                            EnvironmentalSensor::DataSample<float>& data)
+bool Aggregator::getTemperatureData(const std::string& dev_name, Sample& data)
 {
-    auto co2 = sensor_data_db[dev_name].co2;
-    if (co2.empty())
-        return false;
-    data = co2.back_ref();
-    return true;
+    return latestSample(dev_name, [](RealtimeData& d) -> auto& { return d.temperature; }, data);
 }
 
-bool Aggregator::getVOCData(const std::string&                      dev_name,
-                            EnvironmentalSensor::DataSample<float>& data)
+bool Aggregator::getHumidityData(const std::string& dev_name, Sample& data)
 {
-    auto voc = sensor_data_db[dev_name].voc;
-    if (voc.empty())
-        return false;
-    data = voc.back_ref();
-    return true;
+    return latestSample(dev_name, [](RealtimeData& d) -> auto& { return d.humidity; }, data);
 }
 
-bool Aggregator::getIAQData(const std::string&                      dev_name,
-                            EnvironmentalSensor::DataSample<float>& data)
+bool Aggregator::getPressureData(const std::string& dev_name, Sample& data)
 {
-    auto iaq = sensor_data_db[dev_name].iaq;
-    if (iaq.empty())
-        return false;
-    data = iaq.back_ref();
-    return true;
+    return latestSample(dev_name, [](RealtimeData& d) -> auto& { return d.pressure; }, data);
+}
+
+bool Aggregator::getCO2Data(const std::string& dev_name, Sample& data)
+{
+    return latestSample(dev_name, [](RealtimeData& d) -> auto& { return d.co2; }, data);
+}
+
+bool Aggregator::getVOCData(const std::string& dev_name, Sample& data)
+{
+    return latestSample(dev_name, [](RealtimeData& d) -> auto& { return d.voc; }, data);
+}
+
+bool Aggregator::getIAQData(const std::string& dev_name, Sample& data)
+{
+    return latestSample(dev_name, [](RealtimeData& d) -> auto& { return d.iaq; }, data);
 }
 
 bool Aggregator::getIndoorMetricSeries(
@@ -384,10 +340,10 @@ bool Aggregator::getIndoorMetricSeries(
     std::array<EnvironmentalSensor::DataSample<float>, DailyMetricHistory::SlotsPerDay>& slots,
     std::array<bool, DailyMetricHistory::SlotsPerDay>& has_value)
 {
-    lock_guard lg(mutex);
+    MutexGuard lg(mutex_);
 
-    auto metrics_it = indoor_daily_metrics_db.find(dev_name);
-    if (metrics_it == indoor_daily_metrics_db.end())
+    auto metrics_it = indoor_daily_metrics_db_.find(dev_name);
+    if (metrics_it == indoor_daily_metrics_db_.end())
         return false;
 
     const DailyMetricHistory* history = getIndoorMetricHistory(metrics_it->second, param);
@@ -401,71 +357,40 @@ bool Aggregator::getIndoorMetricSeries(
 
 float Aggregator::getTemperatureValue(const std::string& dev_name)
 {
-    auto temperature = sensor_data_db[dev_name].temperature;
-    if (temperature.empty())
-        return 0;
-    return temperature.back_ref().value;
+    return latestValueOrZero(dev_name, [](RealtimeData& d) -> auto& { return d.temperature; });
 }
 
 float Aggregator::getHumidityValue(const std::string& dev_name)
 {
-    auto humidity = sensor_data_db[dev_name].humidity;
-    if (humidity.empty())
-        return 0;
-    return humidity.back_ref().value;
+    return latestValueOrZero(dev_name, [](RealtimeData& d) -> auto& { return d.humidity; });
 }
 
-bool Aggregator::setTemperatureData(const std::string&                            dev_name,
-                                    const EnvironmentalSensor::DataSample<float>& data)
+bool Aggregator::setTemperatureData(const std::string& dev_name, const Sample& data)
 {
-    if (sensor_data_db[dev_name].temperature.empty())
-        return false;
-    sensor_data_db[dev_name].temperature.back_ref() = data;
-    return true;
+    return setLatestSample(dev_name, [](RealtimeData& d) -> auto& { return d.temperature; }, data);
 }
 
-bool Aggregator::setHumidityData(const std::string&                            dev_name,
-                                 const EnvironmentalSensor::DataSample<float>& data)
+bool Aggregator::setHumidityData(const std::string& dev_name, const Sample& data)
 {
-    if (sensor_data_db[dev_name].humidity.empty())
-        return false;
-    sensor_data_db[dev_name].humidity.back_ref() = data;
-    return true;
+    return setLatestSample(dev_name, [](RealtimeData& d) -> auto& { return d.humidity; }, data);
 }
 
-bool Aggregator::setPressureData(const std::string&                            dev_name,
-                                 const EnvironmentalSensor::DataSample<float>& data)
+bool Aggregator::setPressureData(const std::string& dev_name, const Sample& data)
 {
-    if (sensor_data_db[dev_name].pressure.empty())
-        return false;
-    sensor_data_db[dev_name].pressure.back_ref() = data;
-    return true;
+    return setLatestSample(dev_name, [](RealtimeData& d) -> auto& { return d.pressure; }, data);
 }
 
-bool Aggregator::setCO2Data(const std::string&                            dev_name,
-                            const EnvironmentalSensor::DataSample<float>& data)
+bool Aggregator::setCO2Data(const std::string& dev_name, const Sample& data)
 {
-    if (sensor_data_db[dev_name].co2.empty())
-        return false;
-    sensor_data_db[dev_name].co2.back_ref() = data;
-    return true;
+    return setLatestSample(dev_name, [](RealtimeData& d) -> auto& { return d.co2; }, data);
 }
 
-bool Aggregator::setVOCData(const std::string&                            dev_name,
-                            const EnvironmentalSensor::DataSample<float>& data)
+bool Aggregator::setVOCData(const std::string& dev_name, const Sample& data)
 {
-    if (sensor_data_db[dev_name].voc.empty())
-        return false;
-    sensor_data_db[dev_name].voc.back_ref() = data;
-    return true;
+    return setLatestSample(dev_name, [](RealtimeData& d) -> auto& { return d.voc; }, data);
 }
 
-bool Aggregator::setIAQData(const std::string&                            dev_name,
-                            const EnvironmentalSensor::DataSample<float>& data)
+bool Aggregator::setIAQData(const std::string& dev_name, const Sample& data)
 {
-    if (sensor_data_db[dev_name].iaq.empty())
-        return false;
-    sensor_data_db[dev_name].iaq.back_ref() = data;
-    return true;
+    return setLatestSample(dev_name, [](RealtimeData& d) -> auto& { return d.iaq; }, data);
 }
-

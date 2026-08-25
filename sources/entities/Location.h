@@ -4,10 +4,10 @@
 
 class Location
 {
-    static constexpr const char* Tag      = "Location";
-    const uint32_t         buf_size = 2048;
-    char*                  locationResponseBuffer =
-        static_cast<char*>(heap_caps_calloc(buf_size, sizeof(char), MALLOC_CAP_SPIRAM));
+    static constexpr const char* TAG      = "Location";
+    const uint32_t         buffer_size_ = 2048;
+    char*                  response_buffer_ =
+        static_cast<char*>(heap_caps_calloc(buffer_size_, sizeof(char), MALLOC_CAP_SPIRAM));
 
 public:
     static constexpr uint8_t MaxCityNameLength = 150;

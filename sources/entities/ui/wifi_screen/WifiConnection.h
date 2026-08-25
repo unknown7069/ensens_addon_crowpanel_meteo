@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "adapters/lvgl/Button.h"
 #include "adapters/lvgl/ExpandableBlock.h"
@@ -9,11 +9,7 @@
 #include "adapters/lvgl/MenuPage.h"
 #include "entities/WIFI.h"
 #include "entities/Weather.h"
-#ifdef COMMON_DEMO_APP
 #include "entities/ui/wifi_screen/elements/AccessPointItem.h"
-#else
-#include "entities/wifi_screen/elements/AccessPointItem.h"
-#endif
 #include <esp_log.h>
 
 class WifiConnection
@@ -41,7 +37,7 @@ class WifiConnection
 
     AccessPointItem* currentAP;
 
-    static constexpr const char* Tag = "WifiConnection";
+    static constexpr const char* TAG = "WifiConnection";
 
     static void disconnectButtonCallback(lv_event_t* e, void* context);
     static void wifiEventHandler(WIFI::Event event, void* context);

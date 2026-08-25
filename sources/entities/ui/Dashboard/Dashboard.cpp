@@ -1,4 +1,4 @@
-#include "Dashboard.h"
+﻿#include "Dashboard.h"
 
 #include "usecases/WeatherUpdate.h"
 #include <algorithm>
@@ -14,20 +14,20 @@ lv_obj_t* Dashboard::create(SensorSettings* sensor_settings, lv_obj_t* parent)
     lock();
     sensor_settings_ = sensor_settings;
 
-    tv_ = tabview_create(parent, 25);
-    WifiScreen::instance().create(sensor_settings_, tv_->tab_settings);
+    widgets_ = dashboard_view_create(parent, 25);
+    WifiScreen::instance().create(sensor_settings_, widgets_->tab_settings);
     WifiScreen::instance().loadSettings();
 
     setupBottomPlotSources();
 
     unlock();
     updateBottomPlot();
-    return tv_->cont;
+    return widgets_->cont;
 }
 
 void Dashboard::setupBottomPlotSources()
 {
-    if (tv_ == nullptr)
+    if (widgets_ == nullptr)
         return;
 
     static const IndoorMetricPlot kTemperatureMetric = IndoorMetricPlot::Temperature;
@@ -38,17 +38,17 @@ void Dashboard::setupBottomPlotSources()
     static const IndoorMetricPlot kIaqMetric         = IndoorMetricPlot::IAQ;
 
     struct Binding {
-        lv_obj_t**                    widget;
-        const IndoorMetricPlot*       metric;
+        lv_obj_t**              widget;
+        const IndoorMetricPlot* metric;
     };
 
     Binding bindings[] = {
-        { &tv_->temp_inside_label, &kTemperatureMetric },
-        { &tv_->humidity_inside_label, &kHumidityMetric },
-        { &tv_->pressure_inside_label, &kPressureMetric },
-        { &tv_->co2_label, &kCo2Metric },
-        { &tv_->voc_label, &kVocMetric },
-        { &tv_->iaq_label, &kIaqMetric },
+        { &widgets_->temp_inside_label, &kTemperatureMetric },
+        { &widgets_->humidity_inside_label, &kHumidityMetric },
+        { &widgets_->pressure_inside_label, &kPressureMetric },
+        { &widgets_->co2_label, &kCo2Metric },
+        { &widgets_->voc_label, &kVocMetric },
+        { &widgets_->iaq_label, &kIaqMetric },
     };
 
     for (const auto& binding : bindings)
@@ -77,8 +77,8 @@ void Dashboard::updateBottomPlotInternal(IndoorMetricPlot metric)
     lock();
     bottom_plot_metric_ = metric;
 
-    if (tv_ == nullptr || sensor_settings_ == nullptr || tv_->bottom_plot_chart == nullptr ||
-        tv_->bottom_plot_series == nullptr)
+    if (widgets_ == nullptr || sensor_settings_ == nullptr || widgets_->bottom_plot_chart == nullptr ||
+        widgets_->bottom_plot_series == nullptr)
     {
         unlock();
         return;
@@ -141,9 +141,9 @@ void Dashboard::updateBottomPlotInternal(IndoorMetricPlot metric)
                                                      samples, has_value);
 
     const uint16_t desired_points = static_cast<uint16_t>(DailyMetricHistory::SlotsPerDay);
-    if (lv_chart_get_point_count(tv_->bottom_plot_chart) != desired_points)
+    if (lv_chart_get_point_count(widgets_->bottom_plot_chart) != desired_points)
     {
-        lv_chart_set_point_count(tv_->bottom_plot_chart, desired_points);
+        lv_chart_set_point_count(widgets_->bottom_plot_chart, desired_points);
     }
 
     bool  has_any_value = false;
@@ -155,14 +155,14 @@ void Dashboard::updateBottomPlotInternal(IndoorMetricPlot metric)
         lv_coord_t chart_value = LV_CHART_POINT_NONE;
         if (series_available && has_value[i])
         {
-            float value = samples[i].value;
-            min_value   = std::min(min_value, value);
-            max_value   = std::max(max_value, value);
-            chart_value = static_cast<lv_coord_t>(std::lround(value));
+            float value   = samples[i].value;
+            min_value     = std::min(min_value, value);
+            max_value     = std::max(max_value, value);
+            chart_value   = static_cast<lv_coord_t>(std::lround(value));
             has_any_value = true;
         }
 
-        lv_chart_set_value_by_id(tv_->bottom_plot_chart, tv_->bottom_plot_series,
+        lv_chart_set_value_by_id(widgets_->bottom_plot_chart, widgets_->bottom_plot_series,
                                  static_cast<uint16_t>(i), chart_value);
     }
 
@@ -185,13 +185,13 @@ void Dashboard::updateBottomPlotInternal(IndoorMetricPlot metric)
             axis_max = axis_min + 1;
     }
 
-    lv_chart_set_range(tv_->bottom_plot_chart, LV_CHART_AXIS_PRIMARY_Y, axis_min, axis_max);
+    lv_chart_set_range(widgets_->bottom_plot_chart, LV_CHART_AXIS_PRIMARY_Y, axis_min, axis_max);
 
     char title_buffer[64];
     std::snprintf(title_buffer, sizeof(title_buffer), "%s (%s)", metric_label, unit_label);
-    lv_label_set_text(tv_->bottom_plot_title, title_buffer);
+    lv_label_set_text(widgets_->bottom_plot_title, title_buffer);
 
-    if (tv_->bottom_plot_cursor)
+    if (widgets_->bottom_plot_cursor)
     {
         uint32_t slot_minutes = DailyMetricHistory::SlotDurationSecond / 60U;
         if (slot_minutes == 0)
@@ -220,19 +220,18 @@ void Dashboard::updateBottomPlotInternal(IndoorMetricPlot metric)
 
         uint32_t minutes_since_midnight = static_cast<uint32_t>(local_time.tm_hour) * 60U +
                                           static_cast<uint32_t>(local_time.tm_min);
-        uint16_t slot_index =
-            static_cast<uint16_t>(minutes_since_midnight / slot_minutes);
+        uint16_t slot_index = static_cast<uint16_t>(minutes_since_midnight / slot_minutes);
         if (slot_index >= DailyMetricHistory::SlotsPerDay)
             slot_index = DailyMetricHistory::SlotsPerDay - 1;
 
         lv_point_t cursor_pos = { 0, 0 };
-        lv_chart_get_point_pos_by_id(tv_->bottom_plot_chart, tv_->bottom_plot_series, slot_index,
+        lv_chart_get_point_pos_by_id(widgets_->bottom_plot_chart, widgets_->bottom_plot_series, slot_index,
                                      &cursor_pos);
         cursor_pos.y = 0;
-        lv_chart_set_cursor_pos(tv_->bottom_plot_chart, tv_->bottom_plot_cursor, &cursor_pos);
+        lv_chart_set_cursor_pos(widgets_->bottom_plot_chart, widgets_->bottom_plot_cursor, &cursor_pos);
     }
 
-    lv_chart_refresh(tv_->bottom_plot_chart);
+    lv_chart_refresh(widgets_->bottom_plot_chart);
     unlock();
 }
 
@@ -241,8 +240,7 @@ void Dashboard::bottom_plot_source_event_cb(lv_event_t* e)
     if (lv_event_get_code(e) != LV_EVENT_CLICKED)
         return;
 
-    const auto* metric_ptr =
-        static_cast<const IndoorMetricPlot*>(lv_event_get_user_data(e));
+    const auto* metric_ptr = static_cast<const IndoorMetricPlot*>(lv_event_get_user_data(e));
     if (metric_ptr == nullptr)
         return;
 
@@ -317,7 +315,267 @@ void Dashboard::handleIndoorMetricUpdate(const std::string& dev_name,
     updateBottomPlot();
 }
 
-void Dashboard::updateSettings(const std::string& old_dev_name)
+bool Dashboard::beginSelectedLabelUpdate(const std::string& dev_name, lv_obj_t* label)
+{
+    lock();
+    if (label == nullptr || sensor_settings_ == nullptr ||
+        dev_name != sensor_settings_->sensor_name)
+    {
+        unlock();
+        return false;
+    }
+    return true;
+}
+
+void Dashboard::updateNumericLabel(lv_obj_t* label, float value, const char* placeholder,
+                                   const char* number_format, const char* suffix)
+{
+    if (label == nullptr)
+        return;
+
+    if (std::isnan(value))
+    {
+        lv_label_set_text(label, placeholder);
+        return;
+    }
+
+    char text[32] = { 0 };
+    snprintf(text, sizeof(text), number_format, value, suffix);
+    lv_label_set_text(label, text);
+}
+
+void Dashboard::updateTemperature(const std::string& dev_name, float value)
+{
+    if (widgets_ == nullptr || !beginSelectedLabelUpdate(dev_name, widgets_->temp_inside_label))
+        return;
+
+    updateNumericLabel(widgets_->temp_inside_label, value, "--", "%+.1f%s",
+                       unit_names.at(sensor_settings_->temperature));
+    unlock();
+}
+
+void Dashboard::updateHumidity(const std::string& dev_name, float value)
+{
+    if (widgets_ == nullptr || !beginSelectedLabelUpdate(dev_name, widgets_->humidity_inside_label))
+        return;
+
+    updateNumericLabel(widgets_->humidity_inside_label, value, "--%", "%.0f%s", "%");
+    unlock();
+}
+
+void Dashboard::updatePressure(const std::string& dev_name, float value)
+{
+    if (widgets_ == nullptr || !beginSelectedLabelUpdate(dev_name, widgets_->pressure_inside_label))
+        return;
+
+    updateNumericLabel(widgets_->pressure_inside_label, value, "--", "%.0f %s",
+                       unit_names.at(sensor_settings_->pressure));
+    unlock();
+}
+
+namespace
+{
+// Air quality color bands: a value is colored by the first threshold it does
+// not exceed; anything above the last band renders red.
+constexpr std::initializer_list<std::pair<uint16_t, lv_palette_t>> kCo2QualityRangesPpm = {
+    { 800, LV_PALETTE_GREEN }, { 1200, LV_PALETTE_YELLOW }, { 1600, LV_PALETTE_ORANGE }
+};
+constexpr std::initializer_list<std::pair<uint16_t, lv_palette_t>> kVocQualityRangesPpb = {
+    { 200, LV_PALETTE_GREEN }, { 400, LV_PALETTE_YELLOW }, { 1000, LV_PALETTE_ORANGE }
+};
+constexpr std::initializer_list<std::pair<uint16_t, lv_palette_t>> kIaqQualityRangesIndex = {
+    { 50, LV_PALETTE_GREEN }, { 100, LV_PALETTE_YELLOW }, { 150, LV_PALETTE_ORANGE }
+};
+} // namespace
+
+void Dashboard::updateCO2(const std::string& dev_name, uint16_t value)
+{
+    if (widgets_ == nullptr || !beginSelectedLabelUpdate(dev_name, widgets_->co2_label))
+        return;
+
+    auto color = getQualityColor(value, kCo2QualityRangesPpm);
+    lv_obj_set_style_text_color(widgets_->co2_label, color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_label_set_text_fmt(widgets_->co2_label, "%u ppm", value);
+    unlock();
+}
+
+void Dashboard::updateVOC(const std::string& dev_name, uint16_t value)
+{
+    if (widgets_ == nullptr || !beginSelectedLabelUpdate(dev_name, widgets_->voc_label))
+        return;
+
+    auto color = getQualityColor(value, kVocQualityRangesPpb);
+    lv_obj_set_style_text_color(widgets_->voc_label, color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_label_set_text_fmt(widgets_->voc_label, "%u ppb", value);
+    unlock();
+}
+
+void Dashboard::updateIAQ(const std::string& dev_name, uint16_t value)
+{
+    if (widgets_ == nullptr || !beginSelectedLabelUpdate(dev_name, widgets_->iaq_label))
+        return;
+
+    auto color = getQualityColor(value, kIaqQualityRangesIndex);
+    lv_obj_set_style_text_color(widgets_->iaq_label, color, LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_label_set_text_fmt(widgets_->iaq_label, "%u", value);
+    unlock();
+}
+
+void Dashboard::updateOutsideTemperature(float value)
+{
+    if (widgets_ == nullptr)
+        return;
+    lock();
+    updateNumericLabel(widgets_->temp_outside_label, value, "--", "%+.1f%s",
+                       unit_names.at(sensor_settings_->temperature));
+    unlock();
+}
+
+void Dashboard::updateOutsideFeelsLike(float value)
+{
+    if (widgets_ == nullptr)
+        return;
+    lock();
+    updateNumericLabel(widgets_->feels_like_label, value, "--", "%+.1f%s",
+                       unit_names.at(sensor_settings_->temperature));
+    unlock();
+}
+
+void Dashboard::updateOutsideDailyHigh(float value)
+{
+    if (widgets_ == nullptr)
+        return;
+    lock();
+    updateNumericLabel(widgets_->daily_high_label, value, "--", "%.1f%s",
+                       unit_names.at(sensor_settings_->temperature));
+    unlock();
+}
+
+void Dashboard::updateOutsideDailyLow(float value)
+{
+    if (widgets_ == nullptr)
+        return;
+    lock();
+    updateNumericLabel(widgets_->daily_low_label, value, "--", "%.1f%s",
+                       unit_names.at(sensor_settings_->temperature));
+    unlock();
+}
+
+void Dashboard::updateOutsidePressure(float value)
+{
+    if (widgets_ == nullptr)
+        return;
+    lock();
+    float converted = convertValueToDefault(UnitType::hPa, value);
+    converted       = convertValueToUnit(sensor_settings_->pressure, converted);
+    updateNumericLabel(widgets_->pressure_outside_label, converted, "--", "%.0f %s",
+                       unit_names.at(sensor_settings_->pressure));
+    unlock();
+}
+
+void Dashboard::updateOutsideWindSpeed(float value)
+{
+    if (widgets_ == nullptr)
+        return;
+    lock();
+    updateNumericLabel(widgets_->wind_speed_label, value, "--", "%.1f %s", "m/s");
+    unlock();
+}
+
+void Dashboard::updateOutsideHumidity(float value)
+{
+    if (widgets_ == nullptr)
+        return;
+    lock();
+    updateNumericLabel(widgets_->humidity_outside_label, value, "--%", "%.0f%s", "%");
+    unlock();
+}
+
+void Dashboard::updateOutsidePrecipitation(float value)
+{
+    if (widgets_ == nullptr)
+        return;
+    lock();
+    updateNumericLabel(widgets_->precipitation_outside_label, value, "-- mm", "%.1f %s", "mm");
+    unlock();
+}
+
+void Dashboard::updateTimeLabel(uint32_t timestamp, int32_t timestampOffset)
+{
+    lock();
+
+    current_timestamp_ = timestamp;
+    time_t localTimestamp = static_cast<time_t>(timestamp) + timestampOffset;
+
+    if (widgets_)
+    {
+        if (localTimestamp != 0)
+        {
+            time_t     timestampStruct = localTimestamp;
+            struct tm* timeInfo        = localtime(&timestampStruct);
+
+            if (widgets_->label)
+            {
+                char time_text[6] = { 0 };
+                strftime(time_text, sizeof(time_text), "%H:%M", timeInfo);
+                lv_label_set_text(widgets_->label, time_text);
+            }
+
+            if (widgets_->date_label)
+            {
+                char date_text[24] = { 0 };
+                strftime(date_text, sizeof(date_text), "%a %d %b", timeInfo);
+                lv_label_set_text(widgets_->date_label, date_text);
+            }
+        } else
+        {
+            if (widgets_->label)
+                lv_label_set_text(widgets_->label, "");
+            if (widgets_->date_label)
+                lv_label_set_text(widgets_->date_label, "");
+        }
+    }
+
+    unlock();
+}
+
+namespace
+{
+EnvironmentalSensor::DataSample<float> unknownSample()
+{
+    EnvironmentalSensor::DataSample<float> sample{};
+    sample.value = std::numeric_limits<float>::quiet_NaN();
+    return sample;
+}
+} // namespace
+
+void Dashboard::updateSensorData(const std::string& old_dev_name, const std::string& dev_name)
+{
+    EnvironmentalSensor::DataSample<float> temperature = unknownSample();
+    EnvironmentalSensor::DataSample<float> humidity    = unknownSample();
+    EnvironmentalSensor::DataSample<float> pressure    = unknownSample();
+    EnvironmentalSensor::DataSample<float> co2         = unknownSample();
+    EnvironmentalSensor::DataSample<float> voc         = unknownSample();
+    EnvironmentalSensor::DataSample<float> iaq         = unknownSample();
+
+    Aggregator::instance().getTemperatureData(dev_name, temperature);
+    Aggregator::instance().getHumidityData(dev_name, humidity);
+    Aggregator::instance().getPressureData(dev_name, pressure);
+    Aggregator::instance().getCO2Data(dev_name, co2);
+    Aggregator::instance().getVOCData(dev_name, voc);
+    Aggregator::instance().getIAQData(dev_name, iaq);
+
+    updateTemperature(dev_name, temperature.value);
+    updateHumidity(dev_name, humidity.value);
+    updatePressure(dev_name, pressure.value);
+    updateCO2(dev_name, co2.value);
+    updateVOC(dev_name, voc.value);
+    updateIAQ(dev_name, iaq.value);
+
+    updateSettings(old_dev_name);
+}
+
+void Dashboard::updateSettings(const std::string&)
 {
     lock();
     EnvironmentalSensor::DataSample<float> temperature;

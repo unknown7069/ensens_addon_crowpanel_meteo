@@ -1,6 +1,44 @@
 #include "TimestampBlock.h"
 #include "entities/ui/components/common.h"
 
+namespace
+{
+// Newest-to-oldest year options for the calendar header dropdown.
+const char* const kCalendarYearList =
+    "2050\n2049\n2048\n2047\n2046\n2045\n2044\n2043\n2042\n2041\n2040"
+    "\n2039\n2038\n2037\n2036\n2035\n2034\n2033\n2032\n2031\n2030"
+    "\n2029\n2028\n2027\n2026\n2025";
+} // namespace
+
+lv_obj_t* TimestampBlock::createSpinnerColumn(lv_obj_t* parent, lv_obj_t** value_label,
+                                              void (*onUp)(lv_event_t*),
+                                              void (*onDown)(lv_event_t*), void* event_user_data)
+{
+    lv_obj_t* column = lv_obj_create(parent);
+    lv_obj_clear_flag(column, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_flex_align(column, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_flex_flow(column, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_grow(column, 1);
+    lv_obj_set_height(column, LV_SIZE_CONTENT);
+    lv_obj_add_style(column, &transparent_area_style, LV_PART_MAIN);
+
+    lv_obj_t* up_btn   = lv_btn_create(column);
+    lv_obj_t* up_label = lv_label_create(up_btn);
+    lv_label_set_text(up_label, LV_SYMBOL_UP);
+    lv_obj_center(up_label);
+    lv_obj_add_event_cb(up_btn, onUp, LV_EVENT_CLICKED, event_user_data);
+
+    *value_label = lv_label_create(column);
+
+    lv_obj_t* down_btn   = lv_btn_create(column);
+    lv_obj_t* down_label = lv_label_create(down_btn);
+    lv_label_set_text(down_label, LV_SYMBOL_DOWN);
+    lv_obj_center(down_label);
+    lv_obj_add_event_cb(down_btn, onDown, LV_EVENT_CLICKED, event_user_data);
+
+    return column;
+}
+
 void TimestampBlock::create(Menu& menu)
 {
     page.create(menu, "Manual date and time configuration");
@@ -32,10 +70,7 @@ void TimestampBlock::create(Menu& menu)
     lv_obj_add_event_cb(calendar, calendarEventHandler, LV_EVENT_ALL, nullptr);
     lv_calendar_header_dropdown_create(calendar);
     lv_obj_set_size(calendar, lv_pct(100), LV_SIZE_CONTENT);
-    static auto year_list = "2050\n2049\n2048\n2047\n2046\n2045\n2044\n2043\n2042\n2041\n2040"
-                            "\n2039\n2038\n2037\n2036\n2035\n2034\n2033\n2032\n2031\n2030"
-                            "\n2029\n2028\n2027\n2026\n2025";
-    lv_calendar_header_dropdown_set_year_list(calendar, year_list);
+    lv_calendar_header_dropdown_set_year_list(calendar, kCalendarYearList);
 
     const BM8563::Date_t date = BM8563::instance().getDate();
     lv_calendar_set_today_date(calendar, date.year, date.month, date.day);
@@ -49,113 +84,35 @@ void TimestampBlock::create(Menu& menu)
     lv_obj_set_size(manual_time_container, lv_pct(100), LV_SIZE_CONTENT);
     lv_obj_add_style(manual_time_container, &transparent_area_style, LV_PART_MAIN);
 
-    // Hours
-    lv_obj_t* hour_col = lv_obj_create(manual_time_container);
-    lv_obj_clear_flag(hour_col, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_flex_align(hour_col, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
-                          LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_flex_flow(hour_col, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_grow(hour_col, 1);
-    lv_obj_set_height(hour_col, LV_SIZE_CONTENT);
-    lv_obj_add_style(hour_col, &transparent_area_style, LV_PART_MAIN);
-
-    lv_obj_t* hour_up_btn   = lv_btn_create(hour_col);
-    lv_obj_t* hour_up_label = lv_label_create(hour_up_btn);
-    lv_label_set_text(hour_up_label, LV_SYMBOL_UP);
-    lv_obj_center(hour_up_label);
-    lv_obj_add_event_cb(
-        hour_up_btn,
+    createSpinnerColumn(
+        manual_time_container, &hour_label_,
         [](lv_event_t* e) {
-            auto* self = static_cast<TimestampBlock*>(lv_event_get_user_data(e));
-            self->increaseHours();
+            static_cast<TimestampBlock*>(lv_event_get_user_data(e))->changeHours(1);
         },
-        LV_EVENT_CLICKED, this);
-
-    hour_label_ = lv_label_create(hour_col);
-
-    lv_obj_t* hour_down_btn   = lv_btn_create(hour_col);
-    lv_obj_t* hour_down_label = lv_label_create(hour_down_btn);
-    lv_label_set_text(hour_down_label, LV_SYMBOL_DOWN);
-    lv_obj_center(hour_down_label);
-    lv_obj_add_event_cb(
-        hour_down_btn,
         [](lv_event_t* e) {
-            auto* self = static_cast<TimestampBlock*>(lv_event_get_user_data(e));
-            self->decreaseHours();
+            static_cast<TimestampBlock*>(lv_event_get_user_data(e))->changeHours(-1);
         },
-        LV_EVENT_CLICKED, this);
+        this);
 
-    // Minutes
-    lv_obj_t* min_col = lv_obj_create(manual_time_container);
-    lv_obj_clear_flag(min_col, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_flex_align(min_col, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
-                          LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_flex_flow(min_col, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_grow(min_col, 1);
-    lv_obj_set_height(min_col, LV_SIZE_CONTENT);
-    lv_obj_add_style(min_col, &transparent_area_style, LV_PART_MAIN);
-
-    lv_obj_t* min_up_btn   = lv_btn_create(min_col);
-    lv_obj_t* min_up_label = lv_label_create(min_up_btn);
-    lv_label_set_text(min_up_label, LV_SYMBOL_UP);
-    lv_obj_center(min_up_label);
-    lv_obj_add_event_cb(
-        min_up_btn,
+    createSpinnerColumn(
+        manual_time_container, &min_label_,
         [](lv_event_t* e) {
-            auto* self = static_cast<TimestampBlock*>(lv_event_get_user_data(e));
-            self->increaseMinutes();
+            static_cast<TimestampBlock*>(lv_event_get_user_data(e))->changeMinutes(1);
         },
-        LV_EVENT_CLICKED, this);
-
-    min_label_ = lv_label_create(min_col);
-
-    lv_obj_t* min_down_btn   = lv_btn_create(min_col);
-    lv_obj_t* min_down_label = lv_label_create(min_down_btn);
-    lv_label_set_text(min_down_label, LV_SYMBOL_DOWN);
-    lv_obj_center(min_down_label);
-    lv_obj_add_event_cb(
-        min_down_btn,
         [](lv_event_t* e) {
-            auto* self = static_cast<TimestampBlock*>(lv_event_get_user_data(e));
-            self->decreaseMinutes();
+            static_cast<TimestampBlock*>(lv_event_get_user_data(e))->changeMinutes(-1);
         },
-        LV_EVENT_CLICKED, this);
+        this);
 
-    // Seconds
-    lv_obj_t* sec_col = lv_obj_create(manual_time_container);
-    lv_obj_clear_flag(sec_col, LV_OBJ_FLAG_SCROLLABLE);
-    lv_obj_set_flex_align(sec_col, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER,
-                          LV_FLEX_ALIGN_CENTER);
-    lv_obj_set_flex_flow(sec_col, LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_flex_grow(sec_col, 1);
-    lv_obj_set_height(sec_col, LV_SIZE_CONTENT);
-    lv_obj_add_style(sec_col, &transparent_area_style, LV_PART_MAIN);
-
-    lv_obj_t* sec_up_btn   = lv_btn_create(sec_col);
-    lv_obj_t* sec_up_label = lv_label_create(sec_up_btn);
-    lv_label_set_text(sec_up_label, LV_SYMBOL_UP);
-    lv_obj_center(sec_up_label);
-    lv_obj_add_event_cb(
-        sec_up_btn,
+    createSpinnerColumn(
+        manual_time_container, &sec_label_,
         [](lv_event_t* e) {
-            auto* self = static_cast<TimestampBlock*>(lv_event_get_user_data(e));
-            self->increaseSeconds();
+            static_cast<TimestampBlock*>(lv_event_get_user_data(e))->changeSeconds(1);
         },
-        LV_EVENT_CLICKED, this);
-
-    sec_label_ = lv_label_create(sec_col);
-
-    lv_obj_t* sec_down_btn   = lv_btn_create(sec_col);
-    lv_obj_t* sec_down_label = lv_label_create(sec_down_btn);
-    lv_label_set_text(sec_down_label, LV_SYMBOL_DOWN);
-    lv_obj_center(sec_down_label);
-    lv_obj_add_event_cb(
-        sec_down_btn,
         [](lv_event_t* e) {
-            auto* self = static_cast<TimestampBlock*>(lv_event_get_user_data(e));
-            self->decreaseSeconds();
+            static_cast<TimestampBlock*>(lv_event_get_user_data(e))->changeSeconds(-1);
         },
-        LV_EVENT_CLICKED, this);
+        this);
 
     // Confirm
     lv_obj_t* cancel_confirm_col = lv_obj_create(manual_time_container);
@@ -211,78 +168,45 @@ void TimestampBlock::setTimeLabels(const BM8563::Time_t time)
     lvgl_port_unlock();
 }
 
-void TimestampBlock::decreaseHours()
+void TimestampBlock::changeHours(int delta)
 {
-    if (rtc_time_.hours > 0)
-    {
-        rtc_time_.hours--;
-    } else
-    {
-        rtc_time_.hours = 23;
-    }
+    int hours = rtc_time_.hours + delta;
+    if (hours > 23)
+        hours = 0;
+    else if (hours < 0)
+        hours = 23;
+    rtc_time_.hours = static_cast<uint8_t>(hours);
     setTimeLabels(rtc_time_);
 }
 
-void TimestampBlock::decreaseMinutes()
+void TimestampBlock::changeMinutes(int delta)
 {
-    if (rtc_time_.minutes > 0)
+    int minutes = rtc_time_.minutes + delta;
+    if (minutes > 59)
     {
-        rtc_time_.minutes--;
-    } else
+        minutes = 0;
+        changeHours(1);
+    } else if (minutes < 0)
     {
-        rtc_time_.minutes = 59;
-        decreaseHours();
+        minutes = 59;
+        changeHours(-1);
     }
+    rtc_time_.minutes = static_cast<uint8_t>(minutes);
     setTimeLabels(rtc_time_);
 }
 
-void TimestampBlock::decreaseSeconds()
+void TimestampBlock::changeSeconds(int delta)
 {
-    if (rtc_time_.seconds > 0)
+    int seconds = rtc_time_.seconds + delta;
+    if (seconds > 59)
     {
-        rtc_time_.seconds--;
-    } else
+        seconds = 0;
+        changeMinutes(1);
+    } else if (seconds < 0)
     {
-        rtc_time_.seconds = 59;
-        decreaseMinutes();
+        seconds = 59;
+        changeMinutes(-1);
     }
-    setTimeLabels(rtc_time_);
-}
-
-void TimestampBlock::increaseHours()
-{
-    if (rtc_time_.hours < 23)
-    {
-        rtc_time_.hours++;
-    } else
-    {
-        rtc_time_.hours = 0;
-    }
-    setTimeLabels(rtc_time_);
-}
-
-void TimestampBlock::increaseMinutes()
-{
-    if (rtc_time_.minutes < 59)
-    {
-        rtc_time_.minutes++;
-    } else
-    {
-        rtc_time_.minutes = 0;
-        increaseHours();
-    }
-    setTimeLabels(rtc_time_);
-}
-
-void TimestampBlock::increaseSeconds()
-{
-    if (rtc_time_.seconds < 59)
-    {
-        rtc_time_.seconds++;
-    } else
-    {
-        rtc_time_.seconds = 0;
-        increaseMinutes();
-    }
+    rtc_time_.seconds = static_cast<uint8_t>(seconds);
     setTimeLabels(rtc_time_);
 }

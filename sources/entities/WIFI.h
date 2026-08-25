@@ -1,4 +1,4 @@
-#pragma once
+﻿#pragma once
 
 #include "freertos/FreeRTOS.h"
 #include "nvs_flash.h"
@@ -41,7 +41,7 @@ public:
     bool getCurrentAP(char* ssid, int8_t* rssi);
     bool disconnect();
     bool scan();
-    bool getScannedAP(wifi_ap_record_t** AccessPoints, uint16_t* count);
+    bool getScannedAP(wifi_ap_record_t** accessPoints, uint16_t* count);
 
     bool saveAP(const char* ssid, const uint8_t* bssid, const char* pass, bool autoconnect);
     bool eraseAP(const char* ssid, const uint8_t* bssid);
@@ -52,24 +52,24 @@ public:
     void waitForConnection();
 
 private:
-    static constexpr char    Tag[]            = "wifi";
+    static constexpr char    TAG[]            = "wifi";
     static constexpr uint8_t RetryCount       = 1;
     static constexpr uint8_t WifiStoreVersion = 3;
 
-    EventGroupHandle_t           eventGroup;
-    int                          retryNum = 0;
-    esp_event_handler_instance_t instance_any_id;
-    esp_event_handler_instance_t instance_got_ip;
+    EventGroupHandle_t           eventGroup_;
+    int                          retryNum_ = 0;
+    esp_event_handler_instance_t handlerAnyId_;
+    esp_event_handler_instance_t handlerGotIp_;
     static void                eventHandler(void* arg, esp_event_base_t eventBase, int32_t eventId,
                                             void* eventData);
-    SemaphoreHandle_t          mutex;
-    wifi_ap_record_t*          scannedAP;
-    uint16_t                   countScannedAp;
-    char                       currSSID[MAX_SSID_LEN + 1];
-    char                       currPass[MAX_PASSPHRASE_LEN];
-    uint8_t                    currBSSID[6];
-    bool                       currAutoconnect;
-    std::vector<CallbackEntry> callbacks;
+    SemaphoreHandle_t          mutex_;
+    wifi_ap_record_t*          scannedAPs_;
+    uint16_t                   scannedApCount_;
+    char                       currentSsid_[MAX_SSID_LEN + 1];
+    char                       currentPass_[MAX_PASSPHRASE_LEN];
+    uint8_t                    currentBssid_[6];
+    bool                       currentAutoconnect_;
+    std::vector<CallbackEntry> callbacks_;
 
     bool getWifiStoreVersion(uint8_t* version);
 };
