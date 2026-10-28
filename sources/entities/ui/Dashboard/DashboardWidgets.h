@@ -3,13 +3,19 @@
 #include "esp_heap_caps.h"
 #include "lvgl.h"
 
-// Widget handles of the dashboard view (tabs, metric labels, history chart).
+struct StatusMetricWidgets {
+    lv_obj_t* value;
+    lv_obj_t* chart;
+    lv_chart_series_t* series;
+};
+
+// Widget handles of the dashboard view and the six sensor status rows.
 struct DashboardWidgets {
     lv_obj_t* parent;
     lv_obj_t* cont;
     lv_obj_t* tab_dashboard;
     lv_obj_t* tab_settings;
-    lv_obj_t* tab_history;
+    lv_obj_t* tab_status;
     lv_obj_t* tab_bar;
     lv_obj_t* label;
     lv_obj_t* temp_inside_label;
@@ -27,13 +33,10 @@ struct DashboardWidgets {
     lv_obj_t* co2_label;
     lv_obj_t* iaq_label;
     lv_obj_t* date_label;
-    lv_obj_t* bottom_plot_title;
-    lv_obj_t* bottom_plot_chart;
-    lv_chart_series_t* bottom_plot_series;
-    lv_chart_cursor_t* bottom_plot_cursor;
+    StatusMetricWidgets status_metrics[6];
     int32_t   tab_h;
 };
 
-// Builds the dashboard tabs (dashboard, history, settings placeholder) under
+// Builds the dashboard tabs (dashboard, status, settings placeholder) under
 // "parent" and returns the allocated widget bundle.
 DashboardWidgets* dashboard_view_create(lv_obj_t* parent, int32_t tab_h);

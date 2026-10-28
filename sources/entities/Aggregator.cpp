@@ -109,13 +109,13 @@ static void publishMetricToDashboard(const std::string&                    dev_n
         dashboard.updatePressure(dev_name, value);
         break;
     case EnvironmentalSensor::CO2:
-        dashboard.updateCO2(dev_name, static_cast<uint16_t>(value));
+        dashboard.updateCO2(dev_name, value);
         break;
     case EnvironmentalSensor::VOC:
-        dashboard.updateVOC(dev_name, static_cast<uint16_t>(value));
+        dashboard.updateVOC(dev_name, value);
         break;
     case EnvironmentalSensor::IAQ:
-        dashboard.updateIAQ(dev_name, static_cast<uint16_t>(value));
+        dashboard.updateIAQ(dev_name, value);
         break;
     default:
         break;

@@ -1,5 +1,6 @@
 ﻿#include "Weather.h"
 #include "adapters/HTTPRequest.h"
+#include "WeatherForecast.h"
 #include "../certs/OpenWeatherCACert.h"
 #include "esp_heap_caps.h"
 #include <esp_log.h>
@@ -186,6 +187,55 @@ bool Weather::getCurrentWeather(Data* data)
     return retVal;
 }
 
+
+bool Weather::getForecast(Data* data)
+{
+    if (!data || !ctx_)
+        return false;
+    data->nextNightLow = std::numeric_limits<float>::quiet_NaN();
+    data->nextDayHigh = std::numeric_limits<float>::quiet_NaN();
+    if (ctx_->latitude[0] == '\0' || ctx_->longitude[0] == '\0')
+        return false;
+
+    // 24 three-hour points cover both periods while limiting response size.
+    snprintf(ctx_->requestURL, sizeof(ctx_->requestURL),
+             "https://api.openweathermap.org/data/2.5/forecast?lat=%s&lon=%s&appid=%s&units=metric&cnt=24",
+             ctx_->latitude, ctx_->longitude, WEATHER_API_KEY);
+    memset(ctx_->openWeatherDataBuffer, 0, sizeof(ctx_->openWeatherDataBuffer));
+    HTTPRequest request(ctx_->requestURL, HTTP_METHOD_GET, ctx_->openWeatherDataBuffer,
+                        sizeof(ctx_->openWeatherDataBuffer) - 1, OpenWeatherRootCACert);
+    const int32_t length = request.perform();
+    if (length <= 0)
+        return false;
+
+    jparse_ctx_t parser{};
+    if (json_parse_start(&parser, ctx_->openWeatherDataBuffer, length) != OS_SUCCESS)
+        return false;
+    WeatherForecast forecast(data->timestamp);
+    int count = 0;
+    bool valid = json_obj_get_array(&parser, "list", &count) == OS_SUCCESS && count > 0;
+    for (int i = 0; valid && i < count; ++i)
+    {
+        int64_t timestamp = 0;
+        float temperature = 0;
+        valid = json_arr_get_object(&parser, i) == OS_SUCCESS &&
+                json_obj_get_int64(&parser, "dt", &timestamp) == OS_SUCCESS &&
+                json_obj_get_object(&parser, "main") == OS_SUCCESS &&
+                json_obj_get_float(&parser, "temp", &temperature) == OS_SUCCESS &&
+                json_obj_leave_object(&parser) == OS_SUCCESS &&
+                json_arr_leave_object(&parser) == OS_SUCCESS;
+        const int64_t localTimestamp = timestamp + data->timestampOffset;
+        if (valid && localTimestamp >= data->timestamp)
+            forecast.add(localTimestamp, temperature);
+    }
+    json_parse_end(&parser);
+    if (valid)
+    {
+        data->nextNightLow = forecast.nightLow;
+        data->nextDayHigh = forecast.dayHigh;
+    }
+    return valid && std::isfinite(data->nextNightLow) && std::isfinite(data->nextDayHigh);
+}
 
 void Weather::setLocation(char* lat, char* lon, char* name)
 {

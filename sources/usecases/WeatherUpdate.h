@@ -39,8 +39,8 @@ class WeatherUpdate
         Dashboard::instance().updateOutsideWindSpeed(weatherInfo->windSpeed);
         Dashboard::instance().updateOutsideFeelsLike(weatherInfo->feelsLike);
         Dashboard::instance().updateOutsidePressure(weatherInfo->pressure);
-        Dashboard::instance().updateOutsideDailyHigh(weatherInfo->tempMax);
-        Dashboard::instance().updateOutsideDailyLow(weatherInfo->tempMin);
+        Dashboard::instance().updateOutsideDailyHigh(weatherInfo->nextDayHigh);
+        Dashboard::instance().updateOutsideDailyLow(weatherInfo->nextNightLow);
         Dashboard::instance().updateOutsidePrecipitation(weatherInfo->precipitation);
         WifiScreen::instance().setLocation(*weatherInfo);
     }
@@ -58,6 +58,9 @@ public:
         {
             return false;
         }
+        // Keep current readings available if the forecast fails. Missing
+        // forecasts display placeholders rather than current-weather min/max.
+        Weather::instance().getForecast(weatherInfo);
         applyValues();
         return true;
     }

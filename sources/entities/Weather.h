@@ -49,9 +49,12 @@ public:
         uint32_t sunriseTimestamp;
         uint32_t sunsetTimestamp;
         float    precipitation;
+        float    nextNightLow;
+        float    nextDayHigh;
     };
 
     bool getCurrentWeather(Data* data);
+    bool getForecast(Data* data);
 
     void setLocation(char* lat, char* lon, char* name);
 

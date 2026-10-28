@@ -25,23 +25,20 @@
 class Dashboard
 {
 public:
-    enum class IndoorMetricPlot : uint8_t { Temperature, Humidity, Pressure, CO2, VOC, IAQ };
+    enum class StatusMetric : uint8_t { Temperature, Humidity, Pressure, CO2, VOC, IAQ };
 
 private:
     static constexpr char TAG[] = "Dashboard";
 
     DashboardWidgets* widgets_;
     SensorSettings*  sensor_settings_;
-    IndoorMetricPlot bottom_plot_metric_ = IndoorMetricPlot::Temperature;
-    uint32_t         current_timestamp_  = 0;
+    uint32_t current_timestamp_ = 0;
 
-    void setupBottomPlotSources();
-    void selectBottomPlotMetric(IndoorMetricPlot metric);
-    void updateBottomPlotInternal(IndoorMetricPlot metric);
-    void updateBottomPlot();
-    static void bottom_plot_source_event_cb(lv_event_t* e);
-    bool mapParameterToMetric(EnvironmentalSensor::Parameters param, IndoorMetricPlot& metric) const;
-    EnvironmentalSensor::Parameters parameterFromMetric(IndoorMetricPlot metric) const;
+    void updateStatusCharts();
+    void updateStatusChart(StatusMetric metric);
+    void copyStatusMeasurement(StatusMetric metric, lv_obj_t* source);
+    bool mapParameterToMetric(EnvironmentalSensor::Parameters param, StatusMetric& metric) const;
+    EnvironmentalSensor::Parameters parameterFromMetric(StatusMetric metric) const;
 
     Dashboard()                            = default;
     Dashboard(const Dashboard&)            = delete;
@@ -94,9 +91,9 @@ public:
     void updateTemperature(const std::string& dev_name, float value);
     void updateHumidity(const std::string& dev_name, float value);
     void updatePressure(const std::string& dev_name, float value);
-    void updateCO2(const std::string& dev_name, uint16_t value);
-    void updateVOC(const std::string& dev_name, uint16_t value);
-    void updateIAQ(const std::string& dev_name, uint16_t value);
+    void updateCO2(const std::string& dev_name, float value);
+    void updateVOC(const std::string& dev_name, float value);
+    void updateIAQ(const std::string& dev_name, float value);
 
     void updateOutsideTemperature(float value);
     void updateOutsideFeelsLike(float value);

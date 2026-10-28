@@ -37,6 +37,28 @@ pwsh -ExecutionPolicy Bypass -File scripts/test_build.ps1
 Add `-Clean` if you need to start from a pristine `idf.py fullclean` before building.
 
 
+## Simplified dashboard
+
+The main dashboard shows a large clock and full date, current outside and inside
+temperatures, the next overnight low, and the following daytime high. Indoor
+sensor details and history remain on the Status tab; tap the inside temperature
+to open it. Configuration remains on the Settings tab.
+
+Forecast temperatures use the [OpenWeather 3-hour forecast](https://openweathermap.org/api/forecast5).
+The low is the coldest forecast point in the next 18:00-06:00 period, and the high
+is the warmest point in the following 06:00-18:00 period, using the location's
+timezone. Before 06:00, the low covers the remaining current night and the high
+covers the coming day. These are estimates from three-hour samples. Missing
+forecast data shows `--`. All four temperatures follow the configured unit.
+
+Build with `powershell -ExecutionPolicy Bypass -File scripts/build.ps1`. To run
+the forecast boundary tests with a host C++ compiler:
+
+```powershell
+g++ -std=c++17 -Isources tests/weather_forecast_test.cpp -o build/weather_forecast_test.exe
+./build/weather_forecast_test.exe
+```
+
 # Indoor Screen for Meteo project
 
 ## Overview
