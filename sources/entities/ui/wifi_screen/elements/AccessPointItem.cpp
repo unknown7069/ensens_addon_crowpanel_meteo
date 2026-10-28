@@ -26,7 +26,7 @@ void AccessPointItem::show(lv_obj_t* parent)
             icon.create(itemContainer.get());
             setIcon(rssi);
             // // wifi label
-            label.create(itemContainer.get(), &lv_font_montserrat_18);
+            label.create(itemContainer.get(), &lv_font_montserrat_22);
             lv_obj_set_flex_grow(label.get(), 1);
             lv_label_set_long_mode(label.get(), LV_LABEL_LONG_DOT);
             label.align(LV_ALIGN_TOP_LEFT);
@@ -50,7 +50,7 @@ void AccessPointItem::select()
 {
     lv_obj_set_style_bg_opa(buttonContainer.get(), LV_OPA_100, LV_PART_MAIN);
     lv_obj_set_style_bg_color(buttonContainer.get(), lv_color_hex(KitchenTheme::Rule), LV_PART_MAIN);
-    actionLabel.create(itemContainer.get(), &lv_font_montserrat_14);
+    actionLabel.create(itemContainer.get(), &lv_font_montserrat_18);
     actionLabel.setText("Connecting...");
 }
 

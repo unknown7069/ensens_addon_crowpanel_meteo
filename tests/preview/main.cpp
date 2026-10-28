@@ -103,7 +103,7 @@ int main(int argc, char** argv)
     dashboard_view_update_clock(w, now);
     lv_label_set_text(w->temp_inside_label, "21°");
     lv_label_set_text(w->indoor_humidity_label, "42%");
-    lv_label_set_text(w->temp_outside_label, "6°");
+    dashboard_view_update_outside_temperature(w, 6);
     lv_label_set_text(w->feels_like_label, "Feels like 3°C");
     lv_obj_set_style_text_opa(w->wifi_label, LV_OPA_COVER, 0);
     weather_icon_set(w->outside_icon, "02d");
@@ -115,6 +115,13 @@ int main(int argc, char** argv)
     assert(std::strcmp(lv_label_get_text(w->forecast_points[7].temperature), "0°") == 0);
     assert(!lv_obj_has_flag(w->midnight_divider, LV_OBJ_FLAG_HIDDEN));
     checkHomeBounds(w->tab_dashboard);
+    // Long readings must retain their degree sign and fit at the larger sizes.
+    for (float outside : {-40.f, -50.f, 100.f, 6.f}) {
+        dashboard_view_update_outside_temperature(w, outside);
+        lv_obj_update_layout(w->cont);
+        checkHomeBounds(w->tab_dashboard);
+        assert(std::strstr(lv_label_get_text(w->temp_outside_label), "°"));
+    }
     const std::string prefix = argc > 1 ? argv[1] : "dashboard";
     snapshot(prefix + ".bmp");
 
@@ -143,8 +150,7 @@ int main(int argc, char** argv)
     dashboard_view_update_forecast(w, forecast, midnight + 23 * 3600 + 58 * 60, true);
     assert(std::strcmp(lv_label_get_text(w->forecast_points[0].temperature), "30°") == 0);
     lv_label_set_text(w->temp_inside_label, "70°");
-    lv_label_set_text(w->temp_outside_label, "-40°");
-    lv_obj_set_style_text_font(w->temp_outside_label, &lv_font_montserrat_48, 0);
+    dashboard_view_update_outside_temperature(w, -40);
     lv_label_set_text(w->feels_like_label, "Feels like -45°F");
     weather_icon_set(w->outside_icon, "13n");
     lv_obj_update_layout(w->cont);

@@ -4,7 +4,7 @@
 
 namespace {
 using namespace KitchenTheme;
-lv_obj_t* text(lv_obj_t* parent, const char* value, const lv_font_t* font = &lv_font_montserrat_20)
+lv_obj_t* text(lv_obj_t* parent, const char* value, const lv_font_t* font = &lv_font_montserrat_24)
 {
     auto* label = lv_label_create(parent);
     lv_label_set_text(label, value);
@@ -14,7 +14,7 @@ lv_obj_t* text(lv_obj_t* parent, const char* value, const lv_font_t* font = &lv_
 
 lv_obj_t* note(lv_obj_t* parent, const char* value)
 {
-    auto* label = text(parent, value, &lv_font_montserrat_18);
+    auto* label = text(parent, value, &lv_font_montserrat_22);
     lv_obj_set_width(label, LV_PCT(100));
     lv_obj_set_style_text_color(label, lv_color_hex(Muted), 0);
     return label;
@@ -50,16 +50,16 @@ SettingsHeaderWidgets settings_header_create(lv_obj_t* parent, lv_event_cb_t hom
     KitchenTheme::surface(w.header);
     lv_obj_set_size(w.header, LV_PCT(100), 80);
     lv_obj_clear_flag(w.header, LV_OBJ_FLAG_SCROLLABLE);
-    w.home = button(w.header, LV_SYMBOL_LEFT "  Home", 114);
+    w.home = button(w.header, LV_SYMBOL_LEFT "  Home", 128);
     lv_obj_set_pos(w.home, 28, 16);
     lv_obj_add_event_cb(w.home, home, LV_EVENT_CLICKED, context);
-    auto* title = text(w.header, "Settings", &lv_font_montserrat_28);
-    lv_obj_set_pos(title, 164, 14);
-    auto* subtitle = text(w.header, "Display & connections", &lv_font_montserrat_14);
-    lv_obj_set_pos(subtitle, 165, 49);
+    auto* title = text(w.header, "Settings", &lv_font_montserrat_32);
+    lv_obj_set_pos(title, 184, 14);
+    auto* subtitle = text(w.header, "Display & connections", &lv_font_montserrat_18);
+    lv_obj_set_pos(subtitle, 185, 49);
     lv_obj_set_style_text_color(subtitle, lv_color_hex(KitchenTheme::Muted), 0);
-    w.connection = text(w.header, "Wi-Fi offline", &lv_font_montserrat_18);
-    w.location = text(w.header, "Weather location not set", &lv_font_montserrat_14);
+    w.connection = text(w.header, "Wi-Fi offline", &lv_font_montserrat_22);
+    w.location = text(w.header, "Weather location not set", &lv_font_montserrat_18);
     for (auto* label : {w.connection, w.location}) {
         lv_obj_set_width(label, 340);
         lv_label_set_long_mode(label, LV_LABEL_LONG_DOT);
@@ -79,7 +79,7 @@ void settings_menu_style(lv_obj_t* menu)
     KitchenTheme::surface(header);
     lv_obj_set_height(header, 58);
     lv_obj_set_style_pad_hor(header, 24, 0);
-    lv_obj_set_style_text_font(header, &lv_font_montserrat_24, 0);
+    lv_obj_set_style_text_font(header, &lv_font_montserrat_28, 0);
     lv_obj_set_style_pad_ver(header, 12, 0);
     if (auto* sidebarHeader = lv_menu_get_sidebar_header(menu)) {
         // The outer Settings header already names the screen.
@@ -112,7 +112,7 @@ void settings_sidebar_item_style(lv_obj_t* item)
     lv_obj_set_size(item, LV_PCT(100), 56);
     lv_obj_set_style_pad_hor(item, 14, 0);
     lv_obj_set_style_pad_ver(item, 10, 0);
-    lv_obj_set_style_text_font(item, &lv_font_montserrat_18, 0);
+    lv_obj_set_style_text_font(item, &lv_font_montserrat_22, 0);
     lv_obj_set_flex_align(item, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_clear_flag(item, LV_OBJ_FLAG_SCROLLABLE);
 }
@@ -146,7 +146,7 @@ SettingsBrightnessWidgets settings_brightness_create(lv_obj_t* page)
     lv_obj_set_style_pad_ver(manual, 16, 0);
     auto* labels = lv_obj_create(manual);
     KitchenTheme::surface(labels, KitchenTheme::Oatmeal);
-    lv_obj_set_size(labels, LV_PCT(100), 26);
+    lv_obj_set_size(labels, LV_PCT(100), 30);
     lv_obj_set_flex_flow(labels, LV_FLEX_FLOW_ROW);
     lv_obj_set_flex_align(labels, LV_FLEX_ALIGN_SPACE_BETWEEN, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     lv_obj_clear_flag(labels, LV_OBJ_FLAG_SCROLLABLE);
@@ -191,11 +191,11 @@ SettingsTimeWidgets settings_time_create(lv_obj_t* page, int year, int month, in
         lv_obj_set_style_pad_row(column, 4, 0);
         lv_obj_set_flex_align(column, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
         lv_obj_clear_flag(column, LV_OBJ_FLAG_SCROLLABLE);
-        text(column, names[i], &lv_font_montserrat_14);
+        text(column, names[i], &lv_font_montserrat_18);
         w.up[i] = button(column, LV_SYMBOL_UP, 80);
         lv_obj_set_height(w.up[i], 36);
         lv_obj_set_style_min_height(w.up[i], 36, 0);
-        w.values[i] = text(column, "00", &lv_font_montserrat_28);
+        w.values[i] = text(column, "00", &lv_font_montserrat_32);
         w.down[i] = button(column, LV_SYMBOL_DOWN, 80);
         lv_obj_set_height(w.down[i], 36);
         lv_obj_set_style_min_height(w.down[i], 36, 0);
@@ -220,7 +220,7 @@ void settings_network_style(lv_obj_t* button, lv_obj_t* row, lv_obj_t* image)
     lv_obj_set_style_pad_hor(button, 16, 0);
     lv_obj_set_style_pad_ver(button, 4, 0);
     lv_obj_set_style_pad_ver(row, 14, 0);
-    lv_obj_set_style_text_font(row, &lv_font_montserrat_18, 0);
+    lv_obj_set_style_text_font(row, &lv_font_montserrat_22, 0);
     if (image) {
         lv_obj_set_style_img_recolor(image, lv_color_hex(KitchenTheme::Ink), 0);
         lv_obj_set_style_img_recolor_opa(image, LV_OPA_COVER, 0);

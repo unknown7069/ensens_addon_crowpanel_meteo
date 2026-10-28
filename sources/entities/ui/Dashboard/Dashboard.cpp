@@ -10,7 +10,6 @@
 #include <ctime>
 #include <limits>
 
-LV_FONT_DECLARE(kitchen_temperature_88);
 
 lv_obj_t* Dashboard::create(SensorSettings* sensor_settings, lv_obj_t* parent)
 {
@@ -296,13 +295,8 @@ void Dashboard::updateOutsideTemperature(float value)
     if (widgets_ == nullptr)
         return;
     lock();
-    updateNumericLabel(widgets_->temp_outside_label,
-                       convertValueToUnit(sensor_settings_->temperature, value), "--°", "%.0f%s", "°");
-    lv_point_t size;
-    lv_txt_get_size(&size, lv_label_get_text(widgets_->temp_outside_label),
-                    &kitchen_temperature_88, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
-    lv_obj_set_style_text_font(widgets_->temp_outside_label,
-                               size.x > 144 ? &lv_font_montserrat_48 : &kitchen_temperature_88, 0);
+    dashboard_view_update_outside_temperature(widgets_,
+        convertValueToUnit(sensor_settings_->temperature, value));
     unlock();
 }
 

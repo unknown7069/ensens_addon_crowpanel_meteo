@@ -42,7 +42,11 @@ Add `-Clean` if you need to start from a pristine `idf.py fullclean` before buil
 The 800 × 480 home screen uses warm ivory, charcoal text, terracotta accents,
 and a large 12-hour clock with AM/PM and a full weekday/date. Current outdoor
 temperature, weather conditions and feels-like temperature sit beside the clock.
-Indoor temperature and humidity sit below it.
+Indoor temperature and humidity sit below it. Labels and controls across the
+home, sensor and settings pages use larger text for reading at a distance:
+30px date/indoor readings, 36px forecast/sensor values, and 22px forecast times.
+The outdoor temperature uses the largest numeric face that fits (104/88/64px),
+while the clock and AM/PM keep their original sizes.
 
 The lower band shows the next 24 hours as eight three-hour forecast samples,
 with day/night weather icons and a temperature trend. A divider and weekday
@@ -78,11 +82,8 @@ in that same folder. These use sample values; the settings previews share the
 firmware's view factories and palette, with hardware callbacks excluded.
 
 Forecast temperatures use the [OpenWeather 3-hour forecast](https://openweathermap.org/api/forecast5).
-The low is the coldest forecast point in the next 18:00-06:00 period, and the high
-is the warmest point in the following 06:00-18:00 period, using the location's
-timezone. Before 06:00, the low covers the remaining current night and the high
-covers the coming day. These are estimates from three-hour samples. Missing
-forecast data shows `--`. All four temperatures follow the configured unit.
+The dashboard shows the upcoming three-hour samples without a separate
+Tonight/Tomorrow summary. Missing forecast data shows `--`.
 
 After building, connect the panel by USB and use VS Code's ESP-IDF flash/monitor
 action, or run this in an ESP-IDF terminal from the project directory (replace

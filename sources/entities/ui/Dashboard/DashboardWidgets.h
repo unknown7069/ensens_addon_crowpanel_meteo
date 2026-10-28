@@ -48,7 +48,6 @@ struct DashboardWidgets {
     lv_obj_t* settings_button;
     lv_obj_t* indoor_button;
     lv_obj_t* status_back_button;
-    lv_obj_t* forecast_summary_label;
     lv_obj_t* forecast_heading_label;
     lv_obj_t* forecast_band;
     lv_obj_t* forecast_graph;
@@ -67,3 +66,5 @@ DashboardWidgets* dashboard_view_create(lv_obj_t* parent, int32_t tab_h);
 void dashboard_view_update_forecast(DashboardWidgets* widgets, const WeatherForecast& forecast,
                                      int64_t localNow, bool fahrenheit);
 void dashboard_view_update_clock(DashboardWidgets* widgets, int64_t localTimestamp);
+
+void dashboard_view_update_outside_temperature(DashboardWidgets* widgets, float value);

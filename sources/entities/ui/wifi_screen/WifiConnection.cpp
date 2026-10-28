@@ -24,7 +24,7 @@ void WifiConnection::create(Menu& menu, lv_obj_t** _keyboard)
                                       LV_FLEX_FLOW_COLUMN);
         availableListContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
         {
-            availableLabel.create(availableListContainer.get(), &lv_font_montserrat_18);
+            availableLabel.create(availableListContainer.get(), &lv_font_montserrat_22);
             availableLabel.align(LV_ALIGN_TOP_LEFT);
             availableLabel.setText("Available networks");
         }
@@ -113,7 +113,7 @@ void WifiConnection::updateCurrentSSID(char* ssid, int8_t rssi)
         connected = true;
 
         // connected label
-        connectedLabel.create(connectedListContainer.get(), &lv_font_montserrat_18);
+        connectedLabel.create(connectedListContainer.get(), &lv_font_montserrat_22);
         connectedLabel.align(LV_ALIGN_TOP_LEFT);
         connectedLabel.setText("Connected network");
         spaceContainer.create(connectedListContainer.get(), LV_PCT(100), 10, LV_FLEX_FLOW_ROW);
@@ -132,7 +132,7 @@ void WifiConnection::updateCurrentSSID(char* ssid, int8_t rssi)
             currentWifiIcon.create(currentInfoContainer.get());
 
             // wifi label
-            currentWifiLabel.create(currentInfoContainer.get(), &lv_font_montserrat_18);
+            currentWifiLabel.create(currentInfoContainer.get(), &lv_font_montserrat_22);
             lv_obj_set_flex_grow(currentWifiLabel.get(), 1);
             lv_label_set_long_mode(currentWifiLabel.get(), LV_LABEL_LONG_DOT);
             currentWifiLabel.align(LV_ALIGN_TOP_LEFT);
@@ -148,7 +148,7 @@ void WifiConnection::updateCurrentSSID(char* ssid, int8_t rssi)
             lv_obj_set_style_border_color(disconnect.get(), lv_color_hex(KitchenTheme::Rule), LV_PART_MAIN);
             disconnect.setEventCallback(disconnectButtonCallback);
             lv_obj_align(disconnect.get(), LV_ALIGN_RIGHT_MID, 0, 0);
-            disconnectLabel.create(disconnect.get(), &lv_font_montserrat_18);
+            disconnectLabel.create(disconnect.get(), &lv_font_montserrat_22);
             disconnectLabel.setText("Disconnect");
             lv_obj_set_style_img_recolor(currentWifiIcon.get(), lv_color_hex(KitchenTheme::Ink), 0);
             lv_obj_set_style_img_recolor_opa(currentWifiIcon.get(), LV_OPA_COVER, 0);

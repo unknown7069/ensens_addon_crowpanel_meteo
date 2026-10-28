@@ -16,7 +16,9 @@ add_executable(dashboard_preview main.cpp
     "${REPO}/sources/entities/ui/wifi_screen/SettingsView.cpp"
     "${REPO}/sources/entities/ui/fonts/kitchen_clock_188.c"
     "${REPO}/sources/entities/ui/fonts/kitchen_clock_160.c"
-    "${REPO}/sources/entities/ui/fonts/kitchen_temperature_88.c")
+    "${REPO}/sources/entities/ui/fonts/kitchen_temperature_88.c"
+    "${REPO}/sources/entities/ui/fonts/kitchen_temperature_104.c"
+    "${REPO}/sources/entities/ui/fonts/kitchen_temperature_64.c")
 target_include_directories(dashboard_preview PRIVATE "${REPO}/sources")
 target_link_libraries(dashboard_preview PRIVATE lvgl_preview m)
 

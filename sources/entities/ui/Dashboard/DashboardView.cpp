@@ -10,7 +10,9 @@
 
 LV_FONT_DECLARE(kitchen_clock_188);
 LV_FONT_DECLARE(kitchen_clock_160);
+LV_FONT_DECLARE(kitchen_temperature_104);
 LV_FONT_DECLARE(kitchen_temperature_88);
+LV_FONT_DECLARE(kitchen_temperature_64);
 
 namespace {
 using namespace KitchenTheme;
@@ -60,7 +62,7 @@ lv_obj_t* textButton(lv_obj_t* parent, const char* text, int x, int y,
     lv_obj_set_pos(button, x, y);
     lv_obj_set_style_bg_color(button, lv_color_hex(Oatmeal), LV_STATE_PRESSED);
     lv_obj_set_style_radius(button, 8, 0);
-    auto* caption = label(button, text, &lv_font_montserrat_24, 0, 0);
+    auto* caption = label(button, text, &lv_font_montserrat_28, 0, 0);
     lv_obj_center(caption);
     lv_obj_add_event_cb(button, navigate, LV_EVENT_CLICKED, w);
     return button;
@@ -102,10 +104,10 @@ void initStatus(DashboardWidgets* w)
     w->tab_status = lv_tabview_add_tab(w->cont, "Status");
     flat(w->tab_status, Paper);
     lv_obj_clear_flag(w->tab_status, LV_OBJ_FLAG_SCROLLABLE);
-    w->status_back_button = textButton(w->tab_status, LV_SYMBOL_LEFT "  Home", 28, 16, 120, w);
-    label(w->tab_status, "Indoor conditions", &lv_font_montserrat_28, 176, 17);
+    w->status_back_button = textButton(w->tab_status, LV_SYMBOL_LEFT "  Home", 28, 16, 132, w);
+    label(w->tab_status, "Indoor conditions", &lv_font_montserrat_32, 176, 17);
     auto* subtitle = label(w->tab_status, "Last 24 hours / 24h ago - now",
-                            &lv_font_montserrat_16, 176, 53);
+                            &lv_font_montserrat_22, 176, 53);
     lv_obj_set_style_text_color(subtitle, lv_color_hex(Muted), 0);
 
     static const char* titles[] = { "Temperature", "Humidity", "Pressure", "CO2", "VOC", "Air quality" };
@@ -116,10 +118,10 @@ void initStatus(DashboardWidgets* w)
         lv_obj_set_pos(card, 28 + (i % 3) * 254, 94 + (i / 3) * 192);
         lv_obj_set_size(card, 236, 176);
         lv_obj_clear_flag(card, LV_OBJ_FLAG_SCROLLABLE);
-        auto* title = label(card, titles[i], &lv_font_montserrat_18, 18, 16);
+        auto* title = label(card, titles[i], &lv_font_montserrat_24, 18, 16);
         lv_obj_set_style_text_color(title, lv_color_hex(Muted), 0);
         auto& metric = w->status_metrics[i];
-        metric.value = label(card, "--", &lv_font_montserrat_30, 18, 48, 200);
+        metric.value = label(card, "--", &lv_font_montserrat_36, 18, 48, 200);
         metric.chart = lv_chart_create(card);
         lv_obj_set_pos(metric.chart, 18, 112);
         lv_obj_set_size(metric.chart, 200, 48);
@@ -142,8 +144,8 @@ void initDashboard(DashboardWidgets* w)
     lv_obj_t* home = w->tab_dashboard;
     flat(home, Paper);
     lv_obj_clear_flag(home, LV_OBJ_FLAG_SCROLLABLE);
-    w->date_label = label(home, "Setting the clock...", &lv_font_montserrat_24, 28, 20, 620);
-    w->wifi_label = label(home, LV_SYMBOL_WIFI, &lv_font_montserrat_24, 690, 21);
+    w->date_label = label(home, "Setting the clock...", &lv_font_montserrat_30, 28, 20, 620);
+    w->wifi_label = label(home, LV_SYMBOL_WIFI, &lv_font_montserrat_30, 690, 21);
     lv_obj_set_style_text_opa(w->wifi_label, LV_OPA_40, 0);
     w->settings_button = textButton(home, LV_SYMBOL_SETTINGS, 738, 9, 48, w);
 
@@ -159,16 +161,16 @@ void initDashboard(DashboardWidgets* w)
     lv_obj_set_style_pad_column(w->indoor_button, 8, 0);
     lv_obj_set_style_bg_color(w->indoor_button, lv_color_hex(Oatmeal), LV_STATE_PRESSED);
     lv_obj_add_event_cb(w->indoor_button, navigate, LV_EVENT_CLICKED, w);
-    label(w->indoor_button, "Inside", &lv_font_montserrat_24, 0, 0);
-    w->temp_inside_label = label(w->indoor_button, "--°", &lv_font_montserrat_24, 0, 0);
-    label(w->indoor_button, "•  Humidity", &lv_font_montserrat_24, 0, 0);
-    w->indoor_humidity_label = label(w->indoor_button, "--%", &lv_font_montserrat_24, 0, 0);
+    label(w->indoor_button, "Inside", &lv_font_montserrat_30, 0, 0);
+    w->temp_inside_label = label(w->indoor_button, "--°", &lv_font_montserrat_30, 0, 0);
+    label(w->indoor_button, "•  Humidity", &lv_font_montserrat_30, 0, 0);
+    w->indoor_humidity_label = label(w->indoor_button, "--%", &lv_font_montserrat_30, 0, 0);
 
-    w->outside_icon = weather_icon_create(home, 120, Paper);
-    lv_obj_set_pos(w->outside_icon, 513, 83);
-    w->temp_outside_label = label(home, "--°", &kitchen_temperature_88, 630, 96, 144, LV_TEXT_ALIGN_RIGHT);
-    label(home, "Outside now", &lv_font_montserrat_20, 631, 181, 143, LV_TEXT_ALIGN_RIGHT);
-    w->feels_like_label = label(home, "Feels like --°C", &lv_font_montserrat_20, 504, 215, 270, LV_TEXT_ALIGN_RIGHT);
+    w->outside_icon = weather_icon_create(home, 100, Paper);
+    lv_obj_set_pos(w->outside_icon, 516, 84);
+    w->temp_outside_label = label(home, "--°", &kitchen_temperature_104, 614, 94, 160, LV_TEXT_ALIGN_RIGHT);
+    label(home, "Outside now", &lv_font_montserrat_26, 504, 183, 270, LV_TEXT_ALIGN_RIGHT);
+    w->feels_like_label = label(home, "Feels like --°C", &lv_font_montserrat_26, 504, 224, 270, LV_TEXT_ALIGN_RIGHT);
     lv_obj_set_style_text_color(w->feels_like_label, lv_color_hex(Muted), 0);
 
     w->forecast_band = lv_obj_create(home);
@@ -176,9 +178,7 @@ void initDashboard(DashboardWidgets* w)
     lv_obj_set_pos(w->forecast_band, 0, 274);
     lv_obj_set_size(w->forecast_band, 800, 206);
     lv_obj_clear_flag(w->forecast_band, LV_OBJ_FLAG_SCROLLABLE);
-    w->forecast_heading_label = label(w->forecast_band, "NEXT 24 HOURS", &lv_font_montserrat_20, 28, 16, 280);
-    w->forecast_summary_label = label(w->forecast_band, "Tonight --° / Tomorrow --°",
-                                     &lv_font_montserrat_18, 320, 18, 454, LV_TEXT_ALIGN_RIGHT);
+    w->forecast_heading_label = label(w->forecast_band, "NEXT 24 HOURS", &lv_font_montserrat_28, 28, 10, 744);
     w->midnight_divider = lv_obj_create(w->forecast_band);
     flat(w->midnight_divider, Rule);
     lv_obj_set_size(w->midnight_divider, 1, 140);
@@ -187,17 +187,17 @@ void initDashboard(DashboardWidgets* w)
     for (size_t i = 0; i < WeatherForecast::DisplayPoints; ++i) {
         const int x = 24 + i * 94;
         auto& point = w->forecast_points[i];
-        point.time = label(w->forecast_band, "--", &lv_font_montserrat_18, x, 54, 94, LV_TEXT_ALIGN_CENTER);
-        point.day = label(w->forecast_band, "", &lv_font_montserrat_12, x, 77, 94, LV_TEXT_ALIGN_CENTER);
+        point.time = label(w->forecast_band, "--", &lv_font_montserrat_22, x, 49, 94, LV_TEXT_ALIGN_CENTER);
+        point.day = label(w->forecast_band, "", &lv_font_montserrat_18, x, 76, 94, LV_TEXT_ALIGN_CENTER);
         lv_obj_set_style_text_color(point.day, lv_color_hex(Muted), 0);
-        point.icon = weather_icon_create(w->forecast_band, 48, Oatmeal);
-        lv_obj_set_pos(point.icon, x + 23, 91);
-        point.temperature = label(w->forecast_band, "--°", &lv_font_montserrat_30, x, 168, 94, LV_TEXT_ALIGN_CENTER);
+        point.icon = weather_icon_create(w->forecast_band, 42, Oatmeal);
+        lv_obj_set_pos(point.icon, x + 26, 96);
+        point.temperature = label(w->forecast_band, "--°", &lv_font_montserrat_36, x, 163, 94, LV_TEXT_ALIGN_CENTER);
     }
     w->forecast_graph = lv_obj_create(w->forecast_band);
     lv_obj_remove_style_all(w->forecast_graph);
-    lv_obj_set_pos(w->forecast_graph, 0, 139);
-    lv_obj_set_size(w->forecast_graph, 800, 29);
+    lv_obj_set_pos(w->forecast_graph, 0, 138);
+    lv_obj_set_size(w->forecast_graph, 800, 25);
     lv_obj_clear_flag(w->forecast_graph, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(w->forecast_graph, drawForecast, LV_EVENT_DRAW_MAIN, w);
 }
@@ -253,24 +253,13 @@ void dashboard_view_update_forecast(DashboardWidgets* w, const WeatherForecast& 
 {
     const auto next = forecast.next24Hours(localNow);
     float minimum = 10000.f, maximum = -10000.f;
-    WeatherForecast summary(localNow);
-    for (size_t i = 0; i < forecast.count; ++i)
-        summary.add(forecast.points[i].timestamp, forecast.points[i].temperature);
     for (const auto& point : next) {
         if (!point.timestamp) continue;
         minimum = std::min(minimum, point.temperature);
         maximum = std::max(maximum, point.temperature);
     }
     const auto temperature = [fahrenheit](float c) { return fahrenheit ? c * 1.8f + 32.f : c; };
-    char low[16] = "--°", high[16] = "--°", text[96];
-    if (std::isfinite(summary.nightLow))
-        std::snprintf(low, sizeof(low), "%.0f°", temperature(summary.nightLow));
-    if (std::isfinite(summary.dayHigh))
-        std::snprintf(high, sizeof(high), "%.0f°", temperature(summary.dayHigh));
-    const bool early = localNow % 86400 < 6 * 3600;
-    std::snprintf(text, sizeof(text), "%s %s / %s %s",
-                  early ? "This morning" : "Tonight", low, early ? "Today" : "Tomorrow", high);
-    lv_label_set_text(w->forecast_summary_label, text);
+    char text[32];
     lv_label_set_text(w->forecast_heading_label,
                       minimum <= maximum ? "NEXT 24 HOURS" : "FORECAST UNAVAILABLE");
 
@@ -313,7 +302,28 @@ void dashboard_view_update_forecast(DashboardWidgets* w, const WeatherForecast& 
         lv_label_set_text(ui.temperature, text);
         w->forecast_curve[i].x = 71 + i * 94;
         w->forecast_curve[i].y = maximum > minimum ?
-            23 - static_cast<int>((point.temperature - minimum) / (maximum - minimum) * 18.f) : 14;
+            18 - static_cast<int>((point.temperature - minimum) / (maximum - minimum) * 12.f) : 12;
     }
     lv_obj_invalidate(w->forecast_graph);
+}
+
+void dashboard_view_update_outside_temperature(DashboardWidgets* w, float value)
+{
+    char text[24];
+    if (std::isfinite(value)) std::snprintf(text, sizeof(text), "%.0f°", value);
+    else std::snprintf(text, sizeof(text), "--°");
+    lv_label_set_text(w->temp_outside_label, text);
+    // Keep long negative or Fahrenheit readings within the weather column.
+    const lv_font_t* fonts[] = {&kitchen_temperature_104, &kitchen_temperature_88,
+                               &kitchen_temperature_64, &lv_font_montserrat_48};
+    for (const auto* font : fonts) {
+        lv_obj_set_style_text_font(w->temp_outside_label, font, 0);
+        lv_point_t size;
+        lv_txt_get_size(&size, text, font, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+        // Align smaller readings to the same baseline as the largest face.
+        lv_obj_set_y(w->temp_outside_label, 94 +
+            kitchen_temperature_104.line_height - kitchen_temperature_104.base_line -
+            (font->line_height - font->base_line));
+        if (size.x <= 160) break;
+    }
 }

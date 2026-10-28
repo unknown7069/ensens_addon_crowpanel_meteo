@@ -76,7 +76,7 @@ void apply(lv_theme_t*, lv_obj_t* obj)
 void initialize(lv_disp_t* display)
 {
     auto* base = lv_theme_default_init(display, lv_color_hex(Terracotta),
-                                       lv_color_hex(Slate), false, &lv_font_montserrat_18);
+                                       lv_color_hex(Slate), false, &lv_font_montserrat_22);
     if (!initialized) {
         lv_style_init(&paper);
         lv_style_set_bg_color(&paper, lv_color_hex(Paper));
@@ -87,7 +87,7 @@ void initialize(lv_disp_t* display)
         lv_style_set_bg_color(&control, lv_color_hex(Oatmeal));
         lv_style_set_bg_opa(&control, LV_OPA_COVER);
         lv_style_set_text_color(&control, lv_color_hex(Ink));
-        lv_style_set_text_font(&control, &lv_font_montserrat_18);
+        lv_style_set_text_font(&control, &lv_font_montserrat_22);
         lv_style_set_border_color(&control, lv_color_hex(Rule));
         lv_style_set_border_width(&control, 1);
         lv_style_set_radius(&control, 8);
@@ -110,7 +110,7 @@ void initialize(lv_disp_t* display)
         lv_style_set_bg_color(&key, lv_color_hex(Oatmeal));
         lv_style_set_bg_opa(&key, LV_OPA_COVER);
         lv_style_set_text_color(&key, lv_color_hex(Ink));
-        lv_style_set_text_font(&key, &lv_font_montserrat_18);
+        lv_style_set_text_font(&key, &lv_font_montserrat_22);
         lv_style_set_border_width(&key, 0);
         lv_style_set_shadow_width(&key, 0);
         lv_style_set_radius(&key, 6);
