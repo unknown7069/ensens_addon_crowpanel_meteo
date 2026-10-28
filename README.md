@@ -51,13 +51,18 @@ advances. Times use the configured weather location's timezone; fractional-hour
 timezones retain the forecast's actual minutes. Temperatures, including
 feels-like and forecast values, follow the configured Celsius/Fahrenheit unit.
 
-Tap the indoor readings to open sensor details and today's history; use Home
+Tap the indoor readings to open sensor details and the last 24 hours of history; use Home
 to return. The top-right gear opens the existing configuration screen; its
 back button returns to the clock. The Wi-Fi icon dims when disconnected.
 Missing forecasts show placeholders and "FORECAST UNAVAILABLE".
 
 Sensor details use six large cards for temperature, humidity, pressure, CO2,
-VOC and air quality, with a history sparkline for each. Settings uses the same
+VOC and air quality, with a rolling 24-hour sparkline for each. Charts run from
+24 hours ago on the left to now on the right, keeping the latest reading in each
+half-hour bucket. They retain the previous day's readings at midnight and age
+out old values every minute even when the sensor is offline. Missing readings
+remain gaps. History is held in memory and fills as readings arrive after a
+restart. Settings uses the same
 ivory/oatmeal surfaces, charcoal text and terracotta highlights. Its sidebar
 contains Units, Date & time, Brightness, Location and Wi-Fi. Dropdown lists,
 calendar, switches, slider, network rows and the on-screen keyboard share the
@@ -109,7 +114,9 @@ g++ -std=c++17 -Isources tests/weather_forecast_test.cpp -o build/weather_foreca
 ./build/weather_forecast_test.exe
 ```
 
-The desktop checks in `tests/preview` also exercise the real forecast JSON parser,
+The desktop checks in `tests/preview` cover rolling indoor history across
+midnight, bucket wraparound, exact 24-hour expiry, missing readings and unit
+metadata. They also exercise the real forecast JSON parser,
 render the actual LVGL view at 800 × 480, check all 1,440 clock minutes for
 overlap, and test unit conversion, missing data, midnight markers and navigation.
 With CMake, native GCC and Ninja available:

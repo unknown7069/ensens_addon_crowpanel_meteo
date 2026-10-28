@@ -87,6 +87,7 @@ public:
     }
 
     void handleIndoorMetricUpdate(const std::string& dev_name, EnvironmentalSensor::Parameters param);
+    void refreshIndoorHistory();
 
     lv_obj_t* create(SensorSettings* sensor_settings, lv_obj_t* parent);
 

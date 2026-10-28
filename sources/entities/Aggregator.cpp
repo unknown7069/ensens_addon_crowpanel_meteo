@@ -16,51 +16,8 @@
 static auto TAG = "Aggregator";
 static constexpr const char* kIndoorSensorName = "indoor";
 
-bool DailyMetricHistory::store(const EnvironmentalSensor::DataSample<float>& sample)
-{
-    if (sample.timestamp == 0)
-        return false;
-
-    time_t     raw_time = static_cast<time_t>(sample.timestamp);
-    struct tm  timeinfo = {};
-#if defined(_MSC_VER)
-    if (localtime_s(&timeinfo, &raw_time) != 0)
-        return false;
-#else
-    if (localtime_r(&raw_time, &timeinfo) == nullptr)
-        return false;
-#endif
-
-    if (timeinfo.tm_year != current_year || timeinfo.tm_yday != current_yday)
-    {
-        current_year      = timeinfo.tm_year;
-        current_yday      = timeinfo.tm_yday;
-        has_value.fill(false);
-        last_slot         = -1;
-        last_slot_updated = 0;
-    }
-
-    const int minutes_since_midnight = timeinfo.tm_hour * 60 + timeinfo.tm_min;
-    const int slot =
-        static_cast<int>((static_cast<long>(minutes_since_midnight) * 60) / SlotDurationSecond);
-
-    if (slot < 0 || slot >= static_cast<int>(SlotsPerDay))
-        return false;
-
-    if (!has_value[slot] || sample.timestamp >= slots[slot].timestamp)
-    {
-        slots[slot]         = sample;
-        has_value[slot]     = true;
-        last_slot           = slot;
-        last_slot_updated   = sample.timestamp;
-        return true;
-    }
-
-    return false;
-}
-
-const DailyMetricHistory*
-Aggregator::getIndoorMetricHistory(const IndoorDailyMetrics& metrics,
+const IndoorMetricHistory*
+Aggregator::getIndoorMetricHistory(const IndoorMetrics& metrics,
                                    EnvironmentalSensor::Parameters param) const
 {
     switch (param)
@@ -82,11 +39,11 @@ Aggregator::getIndoorMetricHistory(const IndoorDailyMetrics& metrics,
     }
 }
 
-DailyMetricHistory* Aggregator::getIndoorMetricHistory(IndoorDailyMetrics& metrics,
+IndoorMetricHistory* Aggregator::getIndoorMetricHistory(IndoorMetrics& metrics,
                                                        EnvironmentalSensor::Parameters param)
 {
-    return const_cast<DailyMetricHistory*>(
-        getIndoorMetricHistory(static_cast<const IndoorDailyMetrics&>(metrics), param));
+    return const_cast<IndoorMetricHistory*>(
+        getIndoorMetricHistory(static_cast<const IndoorMetrics&>(metrics), param));
 }
 
 // Pushes a realtime sample to whichever Dashboard label shows this metric.
@@ -146,8 +103,7 @@ void Aggregator::handleRealtimeSample(const std::string& dev_name,
             convertToUnit(display_unit, sample);
         }
 
-        // History replays are only kept in the daily history below, never shown
-        // as realtime data.
+        // History replays are not published as realtime data.
         if (sample.flags.is_history())
             return;
 
@@ -175,8 +131,8 @@ bool Aggregator::storeIndoorMetric(const std::string& dev_name, EnvironmentalSen
     if (sample.flags.is_history())
         return false;
 
-    IndoorDailyMetrics& metrics = indoor_daily_metrics_db_[dev_name];
-    DailyMetricHistory* history = getIndoorMetricHistory(metrics, param);
+    IndoorMetrics& metrics = indoor_metrics_db_[dev_name];
+    IndoorMetricHistory* history = getIndoorMetricHistory(metrics, param);
     if (history == nullptr)
         return false;
 
@@ -337,22 +293,22 @@ bool Aggregator::getIAQData(const std::string& dev_name, Sample& data)
 
 bool Aggregator::getIndoorMetricSeries(
     const std::string& dev_name, EnvironmentalSensor::Parameters param,
-    std::array<EnvironmentalSensor::DataSample<float>, DailyMetricHistory::SlotsPerDay>& slots,
-    std::array<bool, DailyMetricHistory::SlotsPerDay>& has_value)
+    uint32_t now, IndoorMetricHistory::Samples& slots,
+    IndoorMetricHistory::Validity& has_value)
 {
+    slots = {};
+    has_value.fill(false);
     MutexGuard lg(mutex_);
 
-    auto metrics_it = indoor_daily_metrics_db_.find(dev_name);
-    if (metrics_it == indoor_daily_metrics_db_.end())
+    auto metrics_it = indoor_metrics_db_.find(dev_name);
+    if (metrics_it == indoor_metrics_db_.end())
         return false;
 
-    const DailyMetricHistory* history = getIndoorMetricHistory(metrics_it->second, param);
+    const IndoorMetricHistory* history = getIndoorMetricHistory(metrics_it->second, param);
     if (history == nullptr)
         return false;
 
-    slots     = history->slots;
-    has_value = history->has_value;
-    return true;
+    return history->read(now, slots, has_value);
 }
 
 float Aggregator::getTemperatureValue(const std::string& dev_name)

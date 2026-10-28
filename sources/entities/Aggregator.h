@@ -5,6 +5,7 @@
 #include "freertos/semphr.h"
 
 #include "entities/EnvironmentalSensorData.h"
+#include "entities/IndoorMetricHistory.h"
 #include "entities/BM8563.h"
 #include "entities/MutexGuard.h"
 #include "entities/RingBuffer.h"
@@ -18,28 +19,13 @@
 
 #define RT_DATA_RING_BUFFER_SIZE (TENDENCY_UPDATE_PERIOD_MS / DEVICE_ADV_UPDATE_PERIOD_MS)
 
-struct DailyMetricHistory {
-    static constexpr size_t   SlotsPerDay         = 48;
-    static constexpr uint32_t SlotDurationSecond = 30 * 60;
-
-    std::array<EnvironmentalSensor::DataSample<float>, SlotsPerDay> slots     = {};
-    std::array<bool, SlotsPerDay>                                   has_value{};
-
-    int      current_year      = -1;
-    int      current_yday      = -1;
-    int      last_slot         = -1;
-    uint32_t last_slot_updated = 0;
-
-    bool store(const EnvironmentalSensor::DataSample<float>& sample);
-};
-
-struct IndoorDailyMetrics {
-    DailyMetricHistory temperature;
-    DailyMetricHistory humidity;
-    DailyMetricHistory pressure;
-    DailyMetricHistory co2;
-    DailyMetricHistory voc;
-    DailyMetricHistory iaq;
+struct IndoorMetrics {
+    IndoorMetricHistory temperature;
+    IndoorMetricHistory humidity;
+    IndoorMetricHistory pressure;
+    IndoorMetricHistory co2;
+    IndoorMetricHistory voc;
+    IndoorMetricHistory iaq;
 };
 
 struct RealtimeData {
@@ -59,7 +45,7 @@ class Aggregator
     using Sample = EnvironmentalSensor::DataSample<float>;
 
     std::unordered_map<std::string, RealtimeData>       sensor_data_db_;
-    std::unordered_map<std::string, IndoorDailyMetrics> indoor_daily_metrics_db_;
+    std::unordered_map<std::string, IndoorMetrics>     indoor_metrics_db_;
 
     SensorSettings sensor_settings_;
 
@@ -67,9 +53,9 @@ class Aggregator
 
     bool storeIndoorMetric(const std::string& dev_name, EnvironmentalSensor::Parameters param,
                            const Sample& sample);
-    DailyMetricHistory*       getIndoorMetricHistory(IndoorDailyMetrics& metrics,
+    IndoorMetricHistory*       getIndoorMetricHistory(IndoorMetrics& metrics,
                                                      EnvironmentalSensor::Parameters param);
-    const DailyMetricHistory* getIndoorMetricHistory(const IndoorDailyMetrics& metrics,
+    const IndoorMetricHistory* getIndoorMetricHistory(const IndoorMetrics& metrics,
                                                      EnvironmentalSensor::Parameters param) const;
     bool isIndoorSensor(const std::string& dev_name) const;
 
@@ -127,6 +113,6 @@ public:
 
     bool getIndoorMetricSeries(
         const std::string& dev_name, EnvironmentalSensor::Parameters param,
-        std::array<EnvironmentalSensor::DataSample<float>, DailyMetricHistory::SlotsPerDay>& slots,
-        std::array<bool, DailyMetricHistory::SlotsPerDay>& has_value);
+        uint32_t now, IndoorMetricHistory::Samples& slots,
+        IndoorMetricHistory::Validity& has_value);
 };

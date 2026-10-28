@@ -2,6 +2,7 @@
 #include "entities/ui/Dashboard/WeatherIcon.h"
 #include "entities/ui/Dashboard/KitchenTheme.h"
 #include "entities/ui/wifi_screen/SettingsView.h"
+#include "entities/IndoorMetricHistory.h"
 
 #include <array>
 #include <cassert>
@@ -176,7 +177,8 @@ int main(int argc, char** argv)
     for (int i = 0; i < 6; ++i) {
         lv_label_set_text(w->status_metrics[i].value, metrics[i]);
         lv_chart_set_range(w->status_metrics[i].chart, LV_CHART_AXIS_PRIMARY_Y, 0, 100);
-        for (int p = 0; p < 48; ++p)
+        assert(lv_chart_get_point_count(w->status_metrics[i].chart) == IndoorMetricHistory::PointCount);
+        for (size_t p = 0; p < IndoorMetricHistory::PointCount; ++p)
             lv_chart_set_value_by_id(w->status_metrics[i].chart, w->status_metrics[i].series,
                                      p, 35 + (p * 3 + i * 5) % 30);
     }

@@ -20,12 +20,13 @@ static void publishRtcTimeTask(void* pv)
 
     for (;;)
     {
-        lvgl_port_lock(-1);
         time_t time_val = BM8563::instance().getUnixTimeStamp();
         ESP_LOGD(TAG, "set_system_time: time=%lu", static_cast<unsigned long>(time_val));
         Dashboard::instance().updateTimeLabel(static_cast<uint32_t>(time_val),
                                               CurrentTime::instance().getTimezoneOffset());
-        lvgl_port_unlock();
+        // Also advance the rolling charts when the sensor is disconnected.
+        // Both methods manage their own locks; never read history while holding LVGL.
+        Dashboard::instance().refreshIndoorHistory();
         vTaskDelayUntil(&xLastWakeTime, updatePeriod);
     }
 }

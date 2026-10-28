@@ -46,6 +46,12 @@ void Dashboard::updateStatusCharts()
         updateStatusChart(static_cast<StatusMetric>(i));
 }
 
+void Dashboard::refreshIndoorHistory()
+{
+    // Called without the LVGL lock: the aggregator must be read first.
+    updateStatusCharts();
+}
+
 void Dashboard::updateStatusChart(StatusMetric metric)
 {
     if (widgets_ == nullptr || sensor_settings_ == nullptr)
@@ -53,11 +59,12 @@ void Dashboard::updateStatusChart(StatusMetric metric)
 
     // Read history before taking the LVGL lock: sensor publishing also takes
     // these locks, in aggregator-then-LVGL order.
-    std::array<EnvironmentalSensor::DataSample<float>, DailyMetricHistory::SlotsPerDay> samples{};
-    std::array<bool, DailyMetricHistory::SlotsPerDay> has_value{};
+    IndoorMetricHistory::Samples samples{};
+    IndoorMetricHistory::Validity has_value{};
+    const uint32_t now = getCurrentTimestamp();
     const std::string sensor_name = sensor_settings_->sensor_name;
     const bool available = Aggregator::instance().getIndoorMetricSeries(
-        sensor_name, parameterFromMetric(metric), samples, has_value);
+        sensor_name, parameterFromMetric(metric), now, samples, has_value);
 
     lock();
     if (sensor_name != sensor_settings_->sensor_name)
@@ -66,7 +73,7 @@ void Dashboard::updateStatusChart(StatusMetric metric)
         return;
     }
     auto& row = widgets_->status_metrics[static_cast<size_t>(metric)];
-    std::array<float, DailyMetricHistory::SlotsPerDay> values{};
+    std::array<float, IndoorMetricHistory::PointCount> values{};
     float minimum = std::numeric_limits<float>::max();
     float maximum = std::numeric_limits<float>::lowest();
     bool any = false;

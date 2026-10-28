@@ -1,6 +1,7 @@
 #include "DashboardWidgets.h"
 #include "KitchenTheme.h"
 #include "WeatherIcon.h"
+#include "entities/IndoorMetricHistory.h"
 
 #include <algorithm>
 #include <cmath>
@@ -103,7 +104,7 @@ void initStatus(DashboardWidgets* w)
     lv_obj_clear_flag(w->tab_status, LV_OBJ_FLAG_SCROLLABLE);
     w->status_back_button = textButton(w->tab_status, LV_SYMBOL_LEFT "  Home", 28, 16, 120, w);
     label(w->tab_status, "Indoor conditions", &lv_font_montserrat_28, 176, 17);
-    auto* subtitle = label(w->tab_status, "Today's history / 00:00 - 24:00",
+    auto* subtitle = label(w->tab_status, "Last 24 hours / 24h ago - now",
                             &lv_font_montserrat_16, 176, 53);
     lv_obj_set_style_text_color(subtitle, lv_color_hex(Muted), 0);
 
@@ -128,7 +129,7 @@ void initStatus(DashboardWidgets* w)
         lv_obj_set_style_border_width(metric.chart, 0, 0);
         lv_obj_set_style_size(metric.chart, 0, LV_PART_INDICATOR);
         lv_chart_set_type(metric.chart, LV_CHART_TYPE_LINE);
-        lv_chart_set_point_count(metric.chart, 48);
+        lv_chart_set_point_count(metric.chart, IndoorMetricHistory::PointCount);
         lv_chart_set_div_line_count(metric.chart, 2, 0);
         metric.series = lv_chart_add_series(metric.chart, lv_color_hex(Terracotta), LV_CHART_AXIS_PRIMARY_Y);
         lv_chart_set_all_value(metric.chart, metric.series, LV_CHART_POINT_NONE);

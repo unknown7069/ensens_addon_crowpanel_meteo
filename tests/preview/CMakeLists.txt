@@ -22,6 +22,8 @@ target_link_libraries(dashboard_preview PRIVATE lvgl_preview m)
 
 add_executable(weather_forecast_test "${REPO}/tests/weather_forecast_test.cpp")
 target_include_directories(weather_forecast_test PRIVATE "${REPO}/sources")
+add_executable(indoor_history_test "${REPO}/tests/indoor_history_test.cpp")
+target_include_directories(indoor_history_test PRIVATE "${REPO}/sources")
 add_executable(weather_parser_test "${REPO}/tests/weather_parser_test.cpp"
     "${REPO}/sources/entities/WeatherForecastParser.cpp"
     "${REPO}/managed_components/espressif__json_parser/src/json_parser.c")
@@ -30,5 +32,6 @@ target_include_directories(weather_parser_test PRIVATE "${REPO}/sources"
     "${REPO}/managed_components/espressif__jsmn/include")
 enable_testing()
 add_test(NAME forecast_boundaries COMMAND weather_forecast_test)
+add_test(NAME indoor_rolling_history COMMAND indoor_history_test)
 add_test(NAME forecast_parser COMMAND weather_parser_test)
 add_test(NAME dashboard_layout COMMAND dashboard_preview)
