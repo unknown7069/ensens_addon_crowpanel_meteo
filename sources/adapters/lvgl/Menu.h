@@ -2,6 +2,7 @@
 
 #include "LvglObject.h"
 #include "lvgl.h"
+#include "entities/ui/wifi_screen/SettingsView.h"
 
 class Menu : public LvglObject
 {
@@ -18,6 +19,7 @@ public:
         parent = parentObj;
         lock();
         menu = lv_menu_create(parent);
+        settings_menu_style(menu);
         unlock();
         return menu != nullptr;
     }
@@ -51,12 +53,6 @@ public:
             return;
         lock();
         rootPage          = lv_menu_page_create(menu, const_cast<char*>(title));
-        lv_obj_t* section = lv_menu_section_create(rootPage);
-
-        lv_obj_t* sep = lv_menu_separator_create(section);
-        lv_obj_set_style_bg_color(sep, lv_color_white(), 0);
-        lv_obj_set_style_bg_opa(sep, LV_OPA_100, 0);
-        lv_obj_set_height(sep, 1);
         unlock();
         return;
     }
@@ -70,6 +66,7 @@ public:
     {
         lock();
         lv_obj_t* page = lv_menu_page_create(menu, const_cast<char*>(title));
+        settings_page_style(page);
         unlock();
         return page;
     }
@@ -98,6 +95,7 @@ public:
     {
         lock();
         lv_menu_set_sidebar_page(menu, page);
+        settings_menu_style(menu);
         unlock();
     }
 

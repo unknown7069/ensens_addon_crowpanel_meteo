@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include <stdint.h>
+#include "WeatherForecast.h"
 
 #define WEATHER_API_KEY "b4d1299a4d4bb3e2ed262199a1c61cae"
 //#define WEATHER_URL
@@ -51,6 +52,7 @@ public:
         float    precipitation;
         float    nextNightLow;
         float    nextDayHigh;
+        WeatherForecast forecast;
     };
 
     bool getCurrentWeather(Data* data);

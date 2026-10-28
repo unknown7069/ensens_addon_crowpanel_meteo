@@ -7,6 +7,7 @@
 #include "entities/ui/Dashboard/Dashboard.h"
 #include "esp_heap_caps.h"
 #include <ctime>
+#include <new>
 
 namespace UseCases
 {
@@ -15,8 +16,10 @@ class WeatherUpdate
     static constexpr char TAG[] = "WeatherUpdate";
 
     time_t         curTimestamp = 0;
-    Weather::Data* weatherInfo =
-        static_cast<Weather::Data*>(heap_caps_calloc(1, sizeof(Weather::Data), MALLOC_CAP_SPIRAM));
+    Weather::Data* weatherInfo = [] {
+        void* memory = heap_caps_malloc(sizeof(Weather::Data), MALLOC_CAP_SPIRAM);
+        return memory ? new (memory) Weather::Data{} : nullptr;
+    }();
 
     WeatherUpdate()                           = default;
     WeatherUpdate(const WeatherUpdate&)       = delete;
@@ -24,7 +27,7 @@ class WeatherUpdate
 
     void applyValues()
     {
-        if (weatherInfo->timestamp == 0)
+        if (!weatherInfo || weatherInfo->timestamp == 0)
             return;
         if (CurrentTime::instance().isTimeSet())
         {
@@ -42,6 +45,7 @@ class WeatherUpdate
         Dashboard::instance().updateOutsideDailyHigh(weatherInfo->nextDayHigh);
         Dashboard::instance().updateOutsideDailyLow(weatherInfo->nextNightLow);
         Dashboard::instance().updateOutsidePrecipitation(weatherInfo->precipitation);
+        Dashboard::instance().updateForecast(weatherInfo->forecast, weatherInfo->icon);
         WifiScreen::instance().setLocation(*weatherInfo);
     }
 
@@ -54,7 +58,7 @@ public:
 
     bool update()
     {
-        if (!Weather::instance().getCurrentWeather(weatherInfo))
+        if (!weatherInfo || !Weather::instance().getCurrentWeather(weatherInfo))
         {
             return false;
         }

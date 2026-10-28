@@ -18,7 +18,7 @@ class BrightnessBlock
     SimpleLabel            brightnessSliderLabel;
     lv_style_t             brightnessSliderStyle;
     lv_obj_t*              brightnessSlider = nullptr;
-    SimpleLabel            brightnessManualValueLabel;
+    lv_obj_t*              brightnessValue = nullptr;
 
     void setSliderDisabled(bool disabled);
 

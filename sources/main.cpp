@@ -13,6 +13,7 @@
 #include "entities/EnvironmentalSensorData.h"
 #include "entities/UART.h"
 #include "entities/ui/Dashboard/Dashboard.h"
+#include "entities/ui/Dashboard/KitchenTheme.h"
 
 #include "entities/Brightness.h"
 #include "entities/CurrentTime.h"
@@ -88,15 +89,15 @@ extern "C" void app_main(void)
     ESP_UTILS_CHECK_FALSE_EXIT(board->begin(), "Board begin failed");
     ESP_UTILS_CHECK_FALSE_EXIT(lvgl_port_init(board->getLCD(), board->getTouch()),
                                "LVGL init failed");
-    lv_disp_t*  dispp = lv_disp_get_default();
-    lv_theme_t* theme =
-        lv_theme_default_init(dispp, lv_palette_main(LV_PALETTE_BLUE),
-                              lv_palette_main(LV_PALETTE_RED), true, LV_FONT_DEFAULT);
-    lv_disp_set_theme(dispp, theme);
+    KitchenTheme::initialize(lv_disp_get_default());
 
     Aggregator::instance().create();
     UART::instance().init();
+    WIFI::instance().addCallback([](WIFI::Event event, void*) {
+        Dashboard::instance().updateWifiStatus(event == WIFI::CONNECTED);
+    }, nullptr);
     WIFI::instance().init();
+    Dashboard::instance().updateWifiStatus(WIFI::instance().isConnected());
     Brightness::instance().init();
 
     Location::Data* location = static_cast<Location::Data*>(

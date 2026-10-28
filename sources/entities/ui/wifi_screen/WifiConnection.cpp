@@ -1,5 +1,6 @@
 ﻿#include "WifiConnection.h"
 #include "WifiScreen.h"
+#include "entities/ui/Dashboard/KitchenTheme.h"
 
 LV_IMG_DECLARE(wifi_100);
 LV_IMG_DECLARE(wifi_75);
@@ -9,26 +10,27 @@ LV_IMG_DECLARE(settings);
 
 void WifiConnection::create(Menu& menu, lv_obj_t** _keyboard)
 {
-    page.create(menu, "WIFI connection");
-    page.createSidebarItem("WIFI");
+    page.create(menu, "Wi-Fi");
+    page.createSidebarItem("Wi-Fi");
 
     /// Spacer.
-    spacer.create(page.getPage(), LV_PCT(100), 20, LV_FLEX_FLOW_ROW);
+    spacer.create(page.getPage(), LV_PCT(100), 1, LV_FLEX_FLOW_ROW);
     {
-        connectedListContainer.create(page.getPage(), LV_PCT(80), LV_SIZE_CONTENT,
+        connectedListContainer.create(page.getPage(), LV_PCT(100), LV_SIZE_CONTENT,
                                       LV_FLEX_FLOW_COLUMN);
         connectedListContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
 
-        availableListContainer.create(page.getPage(), LV_PCT(80), LV_SIZE_CONTENT,
+        availableListContainer.create(page.getPage(), LV_PCT(100), LV_SIZE_CONTENT,
                                       LV_FLEX_FLOW_COLUMN);
         availableListContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
         {
-            availableLabel.create(availableListContainer.get(), &lv_font_montserrat_14);
+            availableLabel.create(availableListContainer.get(), &lv_font_montserrat_18);
             availableLabel.align(LV_ALIGN_TOP_LEFT);
-            availableLabel.setText("Available:");
+            availableLabel.setText("Available networks");
         }
     }
-    keyboardSpacer.create(page.getPage(), LV_PCT(100), lv_disp_get_ver_res(NULL) / 2,
+    availableListContainer.paddingGap(10);
+    keyboardSpacer.create(page.getPage(), LV_PCT(100), 1,
                           LV_FLEX_FLOW_COLUMN);
     keyboard = _keyboard;
 
@@ -111,9 +113,9 @@ void WifiConnection::updateCurrentSSID(char* ssid, int8_t rssi)
         connected = true;
 
         // connected label
-        connectedLabel.create(connectedListContainer.get(), &lv_font_montserrat_14);
+        connectedLabel.create(connectedListContainer.get(), &lv_font_montserrat_18);
         connectedLabel.align(LV_ALIGN_TOP_LEFT);
-        connectedLabel.setText("Connected:");
+        connectedLabel.setText("Connected network");
         spaceContainer.create(connectedListContainer.get(), LV_PCT(100), 10, LV_FLEX_FLOW_ROW);
         // wifiAPInfoContainer (row)
         currentItemContainer.create(connectedListContainer.get(), LV_PCT(100), LV_SIZE_CONTENT,
@@ -130,7 +132,9 @@ void WifiConnection::updateCurrentSSID(char* ssid, int8_t rssi)
             currentWifiIcon.create(currentInfoContainer.get());
 
             // wifi label
-            currentWifiLabel.create(currentInfoContainer.get(), &lv_font_montserrat_14);
+            currentWifiLabel.create(currentInfoContainer.get(), &lv_font_montserrat_18);
+            lv_obj_set_flex_grow(currentWifiLabel.get(), 1);
+            lv_label_set_long_mode(currentWifiLabel.get(), LV_LABEL_LONG_DOT);
             currentWifiLabel.align(LV_ALIGN_TOP_LEFT);
             // disconnect button
             currentDisconnectContainer.create(currentItemContainer.get(), LV_PCT(50),
@@ -141,11 +145,13 @@ void WifiConnection::updateCurrentSSID(char* ssid, int8_t rssi)
             disconnect.create(currentDisconnectContainer.get(), this);
             lv_obj_set_style_pad_all(disconnect.get(), 20, LV_PART_MAIN);
             lv_obj_set_style_border_width(disconnect.get(), 1, LV_PART_MAIN);
-            lv_obj_set_style_border_color(disconnect.get(), lv_color_white(), LV_PART_MAIN);
+            lv_obj_set_style_border_color(disconnect.get(), lv_color_hex(KitchenTheme::Rule), LV_PART_MAIN);
             disconnect.setEventCallback(disconnectButtonCallback);
             lv_obj_align(disconnect.get(), LV_ALIGN_RIGHT_MID, 0, 0);
-            disconnectLabel.create(disconnect.get(), &lv_font_montserrat_14);
+            disconnectLabel.create(disconnect.get(), &lv_font_montserrat_18);
             disconnectLabel.setText("Disconnect");
+            lv_obj_set_style_img_recolor(currentWifiIcon.get(), lv_color_hex(KitchenTheme::Ink), 0);
+            lv_obj_set_style_img_recolor_opa(currentWifiIcon.get(), LV_OPA_COVER, 0);
         }
     }
 
@@ -212,7 +218,7 @@ void WifiConnection::connectButtonCallback(lv_event_t* e, void* _context)
     lv_textarea_set_text(block->textAreaPassword, "");
     lv_textarea_set_password_mode(block->textAreaPassword, true);
     lv_textarea_set_one_line(block->textAreaPassword, true);
-    lv_obj_set_width(block->textAreaPassword, lv_pct(60));
+    lv_obj_set_width(block->textAreaPassword, lv_pct(100));
     lv_obj_add_event_cb(block->textAreaPassword, screen->textareaEventCallback, LV_EVENT_ALL, NULL);
 
     if (block->checkboxAutoConnect)
@@ -224,41 +230,8 @@ void WifiConnection::connectButtonCallback(lv_event_t* e, void* _context)
     lv_checkbox_set_text(block->checkboxAutoConnect, "Auto Connect");
     lv_obj_add_state(block->checkboxAutoConnect, LV_STATE_CHECKED);
 
-    if (!*block->keyboard)
-    {
-        // block->keyboard = lv_keyboard_create(screen->screen);
-        *block->keyboard = lv_keyboard_create(lv_scr_act());
-        lv_obj_set_size(*block->keyboard, LV_HOR_RES, LV_VER_RES / 2);
-        lv_obj_add_event_cb(*block->keyboard, screen->keyboardEventCallback, LV_EVENT_ALL, NULL);
-    }
+    screen->showKeyboard(block->textAreaPassword);
 
-    lv_keyboard_set_textarea(*block->keyboard, block->textAreaPassword); /*Focus it on
-                                                                              one of the text areas
-                                                                              to start*/
-
-    lv_obj_t* ta         = block->textAreaPassword;
-    lv_obj_t* scrollable = ta;
-    while (scrollable && !lv_obj_has_flag(scrollable, LV_OBJ_FLAG_SCROLLABLE))
-    {
-        scrollable = lv_obj_get_parent(scrollable);
-    }
-    if (scrollable)
-    {
-        lv_area_t ta_coords;
-        lv_area_t scroll_coords;
-        lv_obj_get_coords(ta, &ta_coords);
-        lv_obj_get_coords(scrollable, &scroll_coords);
-        lv_coord_t ta_y     = ta_coords.y1 - scroll_coords.y1;
-        lv_coord_t ta_h     = lv_area_get_height(&ta_coords);
-        lv_coord_t scroll_h = lv_obj_get_height(scrollable);
-        lv_coord_t target_y = ta_y + ta_h / 2 - scroll_h / 2;
-
-        lv_obj_scroll_to_y(scrollable, target_y, LV_ANIM_OFF);
-        ESP_LOGI(TAG, "Scrolling to %d(%d, %d, %d)", target_y, ta_y, ta_h, scroll_h);
-    } else
-    {
-        ESP_LOGE(TAG, "Scrollable obj not found");
-    }
 
     lvgl_port_unlock();
 }
@@ -284,9 +257,7 @@ void WifiConnection::connect(AccessPointItem* net, char* password, bool auto_con
     }
     if (*keyboard)
     {
-        lv_obj_remove_event_cb(*keyboard, screen.keyboardEventCallback);
-        lv_obj_del(*keyboard);
-        *keyboard = nullptr;
+        screen.hideKeyboard();
     }
     WIFI::instance().connectAP(net->ssid, net->bssid, password, auto_connect);
 }

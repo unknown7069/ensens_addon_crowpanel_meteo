@@ -6,60 +6,13 @@ void BrightnessBlock::create(Menu& menu)
 {
     page.create(menu, "Brightness");
     page.createSidebarItem("Brightness");
-    /// Spacer.
-    spacer.create(page.getPage(), LV_PCT(100), 20, LV_FLEX_FLOW_ROW);
-
-    {
-        /// Brightness switch.
-        {
-            brightnessSwitchContainer.create(page.getPage(), LV_PCT(80), LV_SIZE_CONTENT,
-                                             LV_FLEX_FLOW_ROW);
-            brightnessSwitchContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER,
-                                            LV_FLEX_ALIGN_CENTER);
-            brightnessSwitchContainer.paddingGap(20);
-            brightnessSwitchLabel.create(brightnessSwitchContainer.get(), &lv_font_montserrat_14,
-                                         LV_ALIGN_LEFT_MID);
-            brightnessSwitchLabel.setText("Auto:");
-
-            brightnessSwitch = lv_switch_create(brightnessSwitchContainer.get());
-            lv_obj_add_event_cb(brightnessSwitch, switchCallback, LV_EVENT_VALUE_CHANGED, this);
-            /// get & set default.
-            lv_obj_add_state(brightnessSwitch, LV_STATE_CHECKED);
-        }
-
-        /// Brightness slider.
-        {
-            brightnessSliderContainer.create(page.getPage(), LV_PCT(80), LV_SIZE_CONTENT,
-                                             LV_FLEX_FLOW_ROW);
-            brightnessSliderContainer.paddingGap(20);
-            brightnessSliderContainer.padding(10, 0);
-            brightnessSliderContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER,
-                                            LV_FLEX_ALIGN_CENTER);
-            brightnessSliderContainer.paddingGap(20);
-            brightnessSliderLabel.create(brightnessSliderContainer.get(), &lv_font_montserrat_14,
-                                         LV_ALIGN_LEFT_MID);
-            brightnessSliderLabel.setText("Manual:");
-            brightnessSlider = lv_slider_create(brightnessSliderContainer.get());
-            lv_obj_add_event_cb(brightnessSlider, sliderCallback, LV_EVENT_VALUE_CHANGED, this);
-            lv_slider_set_value(brightnessSlider, 17, LV_ANIM_OFF);
-            lv_obj_set_width(brightnessSlider, lv_pct(60));
-
-            brightnessManualValueLabel.create(brightnessSliderContainer.get(),
-                                              &lv_font_montserrat_14, LV_ALIGN_RIGHT_MID);
-
-            lv_style_init(&brightnessSliderStyle);
-            lv_style_set_opa(&brightnessSliderStyle, LV_OPA_50);
-            lv_style_set_bg_color(&brightnessSliderStyle, lv_color_hex(0xAAAAAA));
-            lv_style_set_border_color(&brightnessSliderStyle, lv_color_hex(0xCCCCCC));
-            lv_obj_add_style(brightnessSlider, &brightnessSliderStyle,
-                             LV_PART_MAIN | LV_STATE_DISABLED);
-
-            /// get default.
-            /// set default.
-            brightnessManualValueLabel.setText("17%");
-            setSliderDisabled(lv_obj_has_state(brightnessSwitch, LV_STATE_CHECKED));
-        }
-    }
+    const auto view = settings_brightness_create(page.getPage());
+    brightnessSwitch = view.automatic;
+    brightnessSlider = view.slider;
+    brightnessValue = view.value;
+    lv_obj_add_event_cb(brightnessSwitch, switchCallback, LV_EVENT_VALUE_CHANGED, this);
+    lv_obj_add_event_cb(brightnessSlider, sliderCallback, LV_EVENT_VALUE_CHANGED, this);
+    setSliderDisabled(true);
 }
 
 void BrightnessBlock::setSliderDisabled(bool disabled)
@@ -91,7 +44,7 @@ void BrightnessBlock::set(bool autoUpdate, uint8_t level)
     lv_slider_set_value(brightnessSlider, level, LV_ANIM_OFF);
     static char textLevel[10] = { 0 };
     snprintf(textLevel, 10, "%d%%", level);
-    brightnessManualValueLabel.setText(textLevel);
+    lv_label_set_text(brightnessValue, textLevel);
     lvgl_port_unlock();
 }
 
@@ -114,7 +67,7 @@ void BrightnessBlock::sliderCallback(lv_event_t* e)
     ESP_LOGI(TAG, "Brightness: %d", value);
     char text[10] = { 0 };
     snprintf(text, 10, "%d%%", value);
-    self->brightnessManualValueLabel.setText(text);
+    lv_label_set_text(self->brightnessValue, text);
     Brightness::instance().set(false, lv_slider_get_value(self->brightnessSlider));
     lvgl_port_unlock();
 }

@@ -33,6 +33,8 @@ private:
     DashboardWidgets* widgets_;
     SensorSettings*  sensor_settings_;
     uint32_t current_timestamp_ = 0;
+    int32_t timezone_offset_ = 0;
+    WeatherForecast forecast_;
 
     void updateStatusCharts();
     void updateStatusChart(StatusMetric metric);
@@ -105,6 +107,8 @@ public:
     void updateOutsidePrecipitation(float value);
 
     void updateTimeLabel(uint32_t timestamp, int32_t timestampOffset);
+    void updateForecast(const WeatherForecast& forecast, const char* currentIcon);
+    void updateWifiStatus(bool connected);
 
     static lv_color_t getQualityColor(uint16_t value, std::initializer_list<std::pair<uint16_t, lv_palette_t>> ranges)
     {

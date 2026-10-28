@@ -10,57 +10,15 @@
 void UnitsBlock::create(Menu& menu, SensorSettings* sensor_settings)
 {
     sensor_settings_ = sensor_settings;
-
     page.create(menu, "Units");
     page.createSidebarItem("Units");
-    {
-        /// Spacer.
-        spacer.create(page.getPage(), LV_PCT(100), 20, LV_FLEX_FLOW_ROW);
-        /// Temperature units.
-        {
-            temperatureUnitsEntryContainer.create(page.getPage(), LV_PCT(80), LV_SIZE_CONTENT,
-                                                  LV_FLEX_FLOW_ROW);
-            temperatureUnitsEntryContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER,
-                                                 LV_FLEX_ALIGN_CENTER);
-            temperatureUnitsEntryContainer.paddingGap(20);
-            temperatureUnitsEntryContainer.padding(10, 0);
-            temperatureUnitsEntryLabel.create(temperatureUnitsEntryContainer.get(),
-                                              &lv_font_montserrat_14, LV_ALIGN_LEFT_MID);
-            temperatureUnitsEntryLabel.setText("Temperature:");
-
-            temperatureDropDown = lv_dropdown_create(temperatureUnitsEntryContainer.get());
-            lv_dropdown_set_options(temperatureDropDown, "Celsius\nFahrenheit");
-            lv_obj_add_event_cb(
-                temperatureDropDown,
-                [](lv_event_t* e) {
-                    auto* self = static_cast<UnitsBlock*>(lv_event_get_user_data(e));
-                    self->unitsConfigurationHandler(e);
-                },
-                LV_EVENT_VALUE_CHANGED, this);
-        }
-
-        /// Pressure.
-        {
-            pressureUnitsEntryContainer.create(page.getPage(), LV_PCT(80), LV_SIZE_CONTENT,
-                                               LV_FLEX_FLOW_ROW);
-            pressureUnitsEntryContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER,
-                                              LV_FLEX_ALIGN_CENTER);
-            pressureUnitsEntryContainer.paddingGap(20);
-            pressureUnitsEntryLabel.create(pressureUnitsEntryContainer.get(),
-                                           &lv_font_montserrat_14, LV_ALIGN_LEFT_MID);
-            pressureUnitsEntryLabel.setText("Pressure:");
-
-            pressureDropDown = lv_dropdown_create(pressureUnitsEntryContainer.get());
-            lv_dropdown_set_options(pressureDropDown, "hPa\nmmHg");
-            lv_obj_add_event_cb(
-                pressureDropDown,
-                [](lv_event_t* e) {
-                    auto* self = static_cast<UnitsBlock*>(lv_event_get_user_data(e));
-                    self->unitsConfigurationHandler(e);
-                },
-                LV_EVENT_VALUE_CHANGED, this);
-        }
-    }
+    const auto view = settings_units_create(page.getPage());
+    temperatureDropDown = view.temperature;
+    pressureDropDown = view.pressure;
+    for (auto* dropdown : {temperatureDropDown, pressureDropDown})
+        lv_obj_add_event_cb(dropdown, [](lv_event_t* e) {
+            static_cast<UnitsBlock*>(lv_event_get_user_data(e))->unitsConfigurationHandler(e);
+        }, LV_EVENT_VALUE_CHANGED, this);
 }
 
 void UnitsBlock::unitsConfigurationHandler(lv_event_t* e)

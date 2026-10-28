@@ -34,4 +34,24 @@ int main()
     WeatherForecast west(midnight + 2 * hour - 6 * hour);
     assert(west.nightStart == midnight - 6 * hour);
     assert(west.dayStart == midnight + 6 * hour);
+
+    // Exactly eight upcoming three-hour points, with no stale or >24h data.
+    WeatherForecast timeline(midnight + 8 * hour + 42 * 60);
+    timeline.add(midnight + 6 * hour, -99, "01n");
+    for (int i = 0; i < 24; ++i)
+        timeline.add(midnight + (9 + i * 3) * hour, 6.f - i, "02d");
+    assert(timeline.count == WeatherForecast::Capacity);
+    auto next = timeline.next24Hours(timeline.referenceTime);
+    assert(next.front().timestamp == midnight + 9 * hour);
+    assert(next.back().timestamp == midnight + 30 * hour);
+    assert(timeline.next24Hours(midnight + 9 * hour).front().timestamp == midnight + 12 * hour);
+    assert(timeline.next24Hours(midnight + 100 * hour).front().timestamp == 0);
+
+    WeatherForecast sparse(midnight + 8 * hour);
+    sparse.add(midnight + 9 * hour, 3, "01d");
+    sparse.add(midnight + 9 * hour, -100, "13d"); // Duplicate cannot change a slot.
+    sparse.add(midnight + 12 * hour, std::numeric_limits<float>::quiet_NaN());
+    sparse.add(midnight + 33 * hour, 9, "01d"); // Outside the 24-hour window.
+    next = sparse.next24Hours(midnight + 8 * hour);
+    assert(next[0].temperature == 3 && next[1].timestamp == 0);
 }

@@ -1,50 +1,21 @@
-﻿#pragma once
+#pragma once
 
-#include "adapters/lvgl/Button.h"
-#include "adapters/lvgl/FlexContainer.h"
-#include "adapters/lvgl/Image.h"
-#include "adapters/lvgl/SimpleLabel.h"
-#include "entities/ui/weather_screen/elements/LocationLabel.h"
-#include "entities/ui/weather_screen/elements/TimeZoneLabel.h"
-#include "entities/ui/weather_screen/elements/WifiLabel.h"
-#include <esp_log.h>
+#include "SettingsView.h"
+#include <cstdint>
 
-class WifiScreenHeader
-{
-    WifiLabel              wifiLabel;
-    LocationLabel          location;
-    TimeZoneLabel          timeLabel;
-    TimeZoneLabel          dateLabel;
-    FlexContainer          header;
-    FlexContainer          wifiInfoContainer;
-    FlexContainer          locationContainer;
-    FlexContainer          configButtonContainer;
-    Image                  backIcon;
-    Image                  wifiIcon;
-    Button                 button;
-    static constexpr const char* TAG = "wifiScreenHeader";
-    static void            configButtonCallback(lv_event_t* e, void* context);
+class WifiScreenHeader {
+    SettingsHeaderWidgets widgets{};
+    char city_[64]{};
+    char country_[8]{};
+    char time_[16]{};
+    void updateLocation();
+    static void homeCallback(lv_event_t* event);
 
 public:
     void create(lv_obj_t* parent);
-
     void updateRSSI(int8_t rssi);
-
-    void setSSID(char* newSSID);
-
-    void setCity(char* city)
-    {
-        location.setCity(city);
-    }
-
-    void setCountry(char* country)
-    {
-        location.setCountry(country);
-    }
-
-    void setCurrentTime(uint32_t timestamp)
-    {
-        timeLabel.setCurrentTime(timestamp);
-        dateLabel.setCurrentDate(timestamp);
-    }
+    void setSSID(char* ssid);
+    void setCity(char* city);
+    void setCountry(char* country);
+    void setCurrentTime(uint32_t timestamp);
 };

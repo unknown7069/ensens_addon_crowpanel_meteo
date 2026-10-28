@@ -46,7 +46,7 @@ protected:
         lv_label_set_text_static(label, text);
         lv_obj_set_style_text_font(label, font, 0);
         lv_obj_align(label, align, x_ofs, y_ofs);
-        lv_obj_set_style_text_color(label, lv_color_white(), LV_PART_MAIN);
+        // Labels inherit the active palette; explicit metric colors may override it.
 
         if (isAutoLock)
             unlock();

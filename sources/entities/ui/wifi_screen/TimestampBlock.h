@@ -28,12 +28,6 @@ class TimestampBlock
     void changeSeconds(int delta);
     static void calendarEventHandler(lv_event_t* e);
 
-    // Builds an up-button / value-label / down-button column shared by the
-    // hours, minutes and seconds spinners.
-    static lv_obj_t* createSpinnerColumn(lv_obj_t* parent, lv_obj_t** value_label,
-                                         void (*onUp)(lv_event_t*), void (*onDown)(lv_event_t*),
-                                         void* event_user_data);
-
 public:
     void create(Menu&);
 };

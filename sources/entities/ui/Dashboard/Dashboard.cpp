@@ -1,6 +1,8 @@
 ﻿#include "Dashboard.h"
 
 #include "usecases/WeatherUpdate.h"
+#include "KitchenTheme.h"
+#include "WeatherIcon.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -8,12 +10,19 @@
 #include <ctime>
 #include <limits>
 
+LV_FONT_DECLARE(kitchen_temperature_88);
+
 lv_obj_t* Dashboard::create(SensorSettings* sensor_settings, lv_obj_t* parent)
 {
     lock();
     sensor_settings_ = sensor_settings;
 
-    widgets_ = dashboard_view_create(parent, 25);
+    widgets_ = dashboard_view_create(parent, 0);
+    if (!widgets_)
+    {
+        unlock();
+        return nullptr;
+    }
     WifiScreen::instance().create(sensor_settings_, widgets_->tab_settings);
     WifiScreen::instance().loadSettings();
 
@@ -196,9 +205,9 @@ void Dashboard::updateTemperature(const std::string& dev_name, float value)
     if (widgets_ == nullptr || !beginSelectedLabelUpdate(dev_name, widgets_->temp_inside_label))
         return;
 
-    updateNumericLabel(widgets_->temp_inside_label, value, "--", "%+.1f%s",
+    updateNumericLabel(widgets_->temp_inside_label, value, "--°", "%.0f%s", "°");
+    updateNumericLabel(widgets_->status_metrics[0].value, value, "--", "%.1f%s",
                        unit_names.at(sensor_settings_->temperature));
-    copyStatusMeasurement(StatusMetric::Temperature, widgets_->temp_inside_label);
     unlock();
 }
 
@@ -208,6 +217,7 @@ void Dashboard::updateHumidity(const std::string& dev_name, float value)
         return;
 
     updateNumericLabel(widgets_->humidity_inside_label, value, "--%", "%.0f%s", "%");
+    updateNumericLabel(widgets_->indoor_humidity_label, value, "--%", "%.0f%s", "%");
     copyStatusMeasurement(StatusMetric::Humidity, widgets_->humidity_inside_label);
     unlock();
 }
@@ -279,8 +289,13 @@ void Dashboard::updateOutsideTemperature(float value)
     if (widgets_ == nullptr)
         return;
     lock();
-    updateNumericLabel(widgets_->temp_outside_label, convertValueToUnit(sensor_settings_->temperature, value), "--", "%+.1f%s",
-                       unit_names.at(sensor_settings_->temperature));
+    updateNumericLabel(widgets_->temp_outside_label,
+                       convertValueToUnit(sensor_settings_->temperature, value), "--°", "%.0f%s", "°");
+    lv_point_t size;
+    lv_txt_get_size(&size, lv_label_get_text(widgets_->temp_outside_label),
+                    &kitchen_temperature_88, 0, 0, LV_COORD_MAX, LV_TEXT_FLAG_NONE);
+    lv_obj_set_style_text_font(widgets_->temp_outside_label,
+                               size.x > 144 ? &lv_font_montserrat_48 : &kitchen_temperature_88, 0);
     unlock();
 }
 
@@ -289,7 +304,8 @@ void Dashboard::updateOutsideFeelsLike(float value)
     if (widgets_ == nullptr)
         return;
     lock();
-    updateNumericLabel(widgets_->feels_like_label, value, "--", "%+.1f%s",
+    updateNumericLabel(widgets_->feels_like_label,
+                       convertValueToUnit(sensor_settings_->temperature, value), "Feels like --", "Feels like %.0f%s",
                        unit_names.at(sensor_settings_->temperature));
     unlock();
 }
@@ -356,39 +372,38 @@ void Dashboard::updateOutsidePrecipitation(float value)
 void Dashboard::updateTimeLabel(uint32_t timestamp, int32_t timestampOffset)
 {
     lock();
-
     current_timestamp_ = timestamp;
-    time_t localTimestamp = static_cast<time_t>(timestamp) + timestampOffset;
+    timezone_offset_ = timestampOffset;
+    if (widgets_ && timestamp)
+    {
+        const int64_t local = static_cast<int64_t>(timestamp) + timestampOffset;
+        dashboard_view_update_clock(widgets_, local);
+        dashboard_view_update_forecast(widgets_, forecast_, local,
+                                        sensor_settings_->temperature == Fahrenheit);
+    }
+    unlock();
+}
 
+void Dashboard::updateForecast(const WeatherForecast& forecast, const char* currentIcon)
+{
+    lock();
+    forecast_ = forecast;
     if (widgets_)
     {
-        if (localTimestamp != 0)
-        {
-            time_t     timestampStruct = localTimestamp;
-            struct tm* timeInfo        = localtime(&timestampStruct);
-
-            if (widgets_->label)
-            {
-                char time_text[6] = { 0 };
-                strftime(time_text, sizeof(time_text), "%H:%M", timeInfo);
-                lv_label_set_text(widgets_->label, time_text);
-            }
-
-            if (widgets_->date_label)
-            {
-                char date_text[24] = { 0 };
-                strftime(date_text, sizeof(date_text), "%a, %d %b %Y", timeInfo);
-                lv_label_set_text(widgets_->date_label, date_text);
-            }
-        } else
-        {
-            if (widgets_->label)
-                lv_label_set_text(widgets_->label, "");
-            if (widgets_->date_label)
-                lv_label_set_text(widgets_->date_label, "");
-        }
+        weather_icon_set(widgets_->outside_icon, currentIcon);
+        const int64_t local = current_timestamp_ ?
+            static_cast<int64_t>(current_timestamp_) + timezone_offset_ : forecast.referenceTime;
+        dashboard_view_update_forecast(widgets_, forecast_, local,
+                                        sensor_settings_->temperature == Fahrenheit);
     }
+    unlock();
+}
 
+void Dashboard::updateWifiStatus(bool connected)
+{
+    lock();
+    if (widgets_)
+        lv_obj_set_style_text_opa(widgets_->wifi_label, connected ? LV_OPA_COVER : LV_OPA_40, 0);
     unlock();
 }
 

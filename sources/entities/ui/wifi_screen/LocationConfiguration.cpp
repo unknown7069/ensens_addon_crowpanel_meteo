@@ -4,35 +4,20 @@
 #include "entities/ui/wifi_screen/WifiScreen.h"
 #include <cstring>
 #include <esp_log.h>
+#include "entities/ui/Dashboard/KitchenTheme.h"
 
 void LocationConfiguration::create(Menu& menu, lv_obj_t** keyboard_ptr)
 {
-    page.create(menu, "Location configuration");
+    page.create(menu, "Weather location");
     page.createSidebarItem("Location");
-
-    /// Spacer.
-    spacer.create(page.getPage(), LV_PCT(100), 20, LV_FLEX_FLOW_ROW);
-
-    contentWrapContainer.create(page.getPage(), LV_PCT(80), LV_SIZE_CONTENT, LV_FLEX_FLOW_ROW);
-    contentWrapContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-    contentWrapContainer.paddingGap(20);
-
-    entryLabel.create(contentWrapContainer.get(), &lv_font_montserrat_14, LV_ALIGN_LEFT_MID);
-    entryLabel.setText("City:");
-
-    textArea = lv_textarea_create(contentWrapContainer.get());
     Location::instance().get(cityText);
     if (cityText[0] == '\0')
         snprintf(cityText, sizeof(cityText), "Auto detect");
-    lv_textarea_set_text(textArea, cityText);
-    lv_textarea_set_one_line(textArea, true);
-    lv_obj_set_width(textArea, lv_pct(60));
-
+    textArea = settings_location_create(page.getPage(), cityText);
     lv_style_init(&textareaStyle);
-    lv_style_set_text_color(&textareaStyle, lv_color_hex(0x777777));
+    lv_style_set_text_color(&textareaStyle, lv_color_hex(KitchenTheme::Ink));
     lv_obj_add_style(textArea, &textareaStyle, LV_PART_MAIN);
     lv_obj_add_event_cb(textArea, WifiScreen::textareaEventCallback, LV_EVENT_ALL, this);
-
     keyboard = keyboard_ptr;
 }
 
@@ -159,7 +144,7 @@ bool LocationConfiguration::textareaCallback(lv_event_t* e)
             lv_timer_create(
                 [](lv_timer_t* t) {
                     auto* self = static_cast<LocationConfiguration*>(t->user_data);
-                    lv_style_set_text_color(&self->textareaStyle, lv_color_hex(0xffffff));
+                    lv_style_set_text_color(&self->textareaStyle, lv_color_hex(KitchenTheme::Ink));
                     lv_obj_refresh_style(self->textArea, LV_PART_MAIN, LV_STYLE_PROP_ANY);
                     lv_timer_del(t);
                 },
@@ -173,7 +158,7 @@ bool LocationConfiguration::textareaCallback(lv_event_t* e)
             lv_timer_create(
                 [](lv_timer_t* t) {
                     auto* self = static_cast<LocationConfiguration*>(t->user_data);
-                    lv_style_set_text_color(&self->textareaStyle, lv_color_hex(0x777777));
+                    lv_style_set_text_color(&self->textareaStyle, lv_color_hex(KitchenTheme::Muted));
                     lv_obj_refresh_style(self->textArea, LV_PART_MAIN, LV_STYLE_PROP_ANY);
                     lv_timer_del(t);
                 },
@@ -181,9 +166,7 @@ bool LocationConfiguration::textareaCallback(lv_event_t* e)
 
             if (self->keyboard && *self->keyboard)
             {
-                lv_obj_remove_event_cb(*self->keyboard, WifiScreen::keyboardEventCallback);
-                lv_obj_del(*self->keyboard);
-                *self->keyboard = nullptr;
+                WifiScreen::instance().hideKeyboard();
             }
         }
         retVal = false;

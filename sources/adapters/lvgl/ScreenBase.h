@@ -1,6 +1,7 @@
 #pragma once
 
 #include "adapters/lvgl/LvglObject.h"
+#include "entities/ui/Dashboard/KitchenTheme.h"
 
 class ScreenBase : public LvglObject
 {
@@ -14,7 +15,7 @@ protected:
 
         lock();
         screen = screen_;
-        lv_obj_set_style_bg_color(screen, lv_color_hex(0x222222), LV_PART_MAIN);
+        lv_obj_set_style_bg_color(screen, lv_color_hex(KitchenTheme::Paper), LV_PART_MAIN);
         lv_obj_set_style_bg_opa(lv_scr_act(), LV_OPA_COVER, LV_PART_MAIN);
         unlock();
     }

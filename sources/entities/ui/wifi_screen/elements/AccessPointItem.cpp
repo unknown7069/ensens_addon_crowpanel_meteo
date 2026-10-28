@@ -1,5 +1,6 @@
 #include "AccessPointItem.h"
 #include "entities/ui/wifi_screen/WifiScreen.h"
+#include "entities/ui/Dashboard/KitchenTheme.h"
 
 LV_IMG_DECLARE(wifi_100);
 LV_IMG_DECLARE(wifi_75);
@@ -25,7 +26,9 @@ void AccessPointItem::show(lv_obj_t* parent)
             icon.create(itemContainer.get());
             setIcon(rssi);
             // // wifi label
-            label.create(itemContainer.get(), &lv_font_montserrat_14);
+            label.create(itemContainer.get(), &lv_font_montserrat_18);
+            lv_obj_set_flex_grow(label.get(), 1);
+            lv_label_set_long_mode(label.get(), LV_LABEL_LONG_DOT);
             label.align(LV_ALIGN_TOP_LEFT);
             label.setText(ssid);
             lv_obj_clear_flag(buttonContainer.get(), LV_OBJ_FLAG_CLICKABLE);
@@ -38,14 +41,17 @@ void AccessPointItem::show(lv_obj_t* parent)
     dataContainer.create(buttonContainer.get(), LV_PCT(100), LV_SIZE_CONTENT, LV_FLEX_FLOW_ROW);
     dataContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     dataContainer.paddingGap(20);
+    settings_network_style(button.get(), itemContainer.get(), icon.get());
+    lv_obj_set_flex_flow(dataContainer.get(), LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(dataContainer.get(), LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
 }
 
 void AccessPointItem::select()
 {
     lv_obj_set_style_bg_opa(buttonContainer.get(), LV_OPA_100, LV_PART_MAIN);
-    lv_obj_set_style_bg_color(buttonContainer.get(), lv_color_hex(0x777777), LV_PART_MAIN);
+    lv_obj_set_style_bg_color(buttonContainer.get(), lv_color_hex(KitchenTheme::Rule), LV_PART_MAIN);
     actionLabel.create(itemContainer.get(), &lv_font_montserrat_14);
-    actionLabel.setText("\tconnecting...");
+    actionLabel.setText("Connecting...");
 }
 
 void AccessPointItem::deselect()

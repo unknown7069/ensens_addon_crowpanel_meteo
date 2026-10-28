@@ -1,101 +1,80 @@
-﻿#include "WifiScreenHeader.h"
+#include "WifiScreenHeader.h"
 #include "entities/ui/Dashboard/Dashboard.h"
 
-LV_IMG_DECLARE(wifi_100);
-LV_IMG_DECLARE(wifi_75);
-LV_IMG_DECLARE(wifi_50);
-LV_IMG_DECLARE(wifi_25);
+#include <cstdio>
+#include <ctime>
 
-LV_IMG_DECLARE(back_icon);
-void WifiScreenHeader::configButtonCallback(lv_event_t* e, void* context)
+void WifiScreenHeader::homeCallback(lv_event_t*)
 {
-    if (lv_event_get_code(e) == LV_EVENT_CLICKED)
-    {
-        ESP_LOGI(TAG, "button pressed");
-        DashboardWidgets* tv = Dashboard::instance().getTabView();
-        if (tv == nullptr || tv->parent == nullptr)
-            return;
-        lvgl_port_lock(-1);
-        lv_disp_load_scr(tv->parent);
-        lvgl_port_unlock();
-    }
+    lvgl_port_lock(-1);
+    WifiScreen::instance().hideKeyboard();
+    if (auto* view = Dashboard::instance().getTabView())
+        lv_tabview_set_act(view->cont, 0, LV_ANIM_OFF);
+    lvgl_port_unlock();
 }
 
 void WifiScreenHeader::create(lv_obj_t* parent)
 {
-    // create header.
-    header.create(parent, lv_pct(100), lv_pct(8), LV_FLEX_FLOW_ROW);
-    header.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
-    lv_obj_clear_flag(header.get(), LV_OBJ_FLAG_SCROLLABLE);
-    {
-        /*******************/
-        /** WIFI CONTAINER */
-        /*******************/
-        wifiInfoContainer.create(header.get(), lv_pct(20), lv_pct(100), LV_FLEX_FLOW_ROW);
-        wifiInfoContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-        lv_obj_clear_flag(wifiInfoContainer.get(), LV_OBJ_FLAG_SCROLLABLE);
-        wifiInfoContainer.padding(5, 5);
-        wifiInfoContainer.paddingGap(5);
-        {
-            // create wifi image.
-            wifiIcon.create(wifiInfoContainer.get());
-            wifiIcon.set(&wifi_25);
-            wifiIcon.align(LV_ALIGN_TOP_LEFT);
+    widgets = settings_header_create(parent, homeCallback, this);
+}
 
-            // create wifi label.
-            wifiLabel.create(wifiInfoContainer.get(), &lv_font_montserrat_14);
-        }
-
-        /************************************/
-        /** LOCATION CENTRAL LOCATION LABEL */
-        /************************************/
-        locationContainer.create(header.get(), lv_pct(60), LV_SIZE_CONTENT, LV_FLEX_FLOW_ROW);
-        lv_obj_clear_flag(locationContainer.get(), LV_OBJ_FLAG_SCROLLABLE);
-        locationContainer.align(LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
-        locationContainer.paddingGap(30);
-        locationContainer.padding(10, 0);
-        {
-            // create location label.
-            location.create(locationContainer.get(), &lv_font_montserrat_16);
-            timeLabel.create(locationContainer.get(), &lv_font_montserrat_16);
-            dateLabel.create(locationContainer.get(), &lv_font_montserrat_16);
-        }
-
-        /*************************/
-        /** CONFIGURATION BUTTON */
-        /*************************/
-        configButtonContainer.create(header.get(), lv_pct(20), LV_SIZE_CONTENT, LV_FLEX_FLOW_ROW);
-        configButtonContainer.align(LV_FLEX_ALIGN_END, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_START);
-        configButtonContainer.padding(0, 0);
-        button.create(configButtonContainer.get());
-        button.setEventCallback(configButtonCallback);
-        lv_obj_set_style_pad_all(button.get(), 5, LV_PART_MAIN);
-        lv_obj_clear_flag(configButtonContainer.get(), LV_OBJ_FLAG_SCROLLABLE);
-        {
-            // create image.
-            backIcon.create(button.get());
-            backIcon.scale(0.75f);
-            backIcon.set(&back_icon);
-            backIcon.align(LV_ALIGN_TOP_RIGHT);
-        }
-    }
+void WifiScreenHeader::setSSID(char* ssid)
+{
+    lvgl_port_lock(-1);
+    if (ssid && *ssid)
+        lv_label_set_text_fmt(widgets.connection, LV_SYMBOL_WIFI "  %s", ssid);
+    else
+        lv_label_set_text(widgets.connection, "Wi-Fi offline");
+    lvgl_port_unlock();
 }
 
 void WifiScreenHeader::updateRSSI(int8_t rssi)
 {
-    if (rssi >= -50)
-        wifiIcon.set(&wifi_100);
-    else if (rssi >= -60)
-        wifiIcon.set(&wifi_75);
-    else if (rssi >= -70)
-        wifiIcon.set(&wifi_50);
-    else
-        wifiIcon.set(&wifi_25);
+    lvgl_port_lock(-1);
+    lv_obj_set_style_text_opa(widgets.connection, rssi >= -70 ? LV_OPA_COVER : LV_OPA_70, 0);
+    lvgl_port_unlock();
 }
 
-void WifiScreenHeader::setSSID(char* newSSID)
+void WifiScreenHeader::updateLocation()
 {
-    wifiLabel.setSSID(newSSID);
-    if (!newSSID)
-        wifiIcon.set(&wifi_25);
+    char context[112];
+    if (!*city_)
+        std::snprintf(context, sizeof(context), "Weather location not set");
+    else
+        std::snprintf(context, sizeof(context), "%s%s%s%s%s", city_, *country_ ? ", " : "",
+                       country_, *time_ ? " / " : "", time_);
+    lv_label_set_text(widgets.location, context);
+}
+
+void WifiScreenHeader::setCity(char* city)
+{
+    lvgl_port_lock(-1);
+    std::snprintf(city_, sizeof(city_), "%s", city ? city : "");
+    updateLocation();
+    lvgl_port_unlock();
+}
+
+void WifiScreenHeader::setCountry(char* country)
+{
+    lvgl_port_lock(-1);
+    std::snprintf(country_, sizeof(country_), "%s", country ? country : "");
+    updateLocation();
+    lvgl_port_unlock();
+}
+
+void WifiScreenHeader::setCurrentTime(uint32_t timestamp)
+{
+    lvgl_port_lock(-1);
+    const time_t local = timestamp;
+    struct tm info{};
+    if (timestamp) {
+        gmtime_r(&local, &info);
+        std::snprintf(time_, sizeof(time_), "%d:%02d %s",
+                       info.tm_hour % 12 ? info.tm_hour % 12 : 12, info.tm_min,
+                       info.tm_hour < 12 ? "AM" : "PM");
+    } else {
+        time_[0] = 0;
+    }
+    updateLocation();
+    lvgl_port_unlock();
 }

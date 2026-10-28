@@ -5,6 +5,7 @@
 #include "nvs.h"
 #include "nvs_flash.h"
 #include "esp_heap_caps.h"
+#include "entities/ui/Dashboard/KitchenTheme.h"
 
 void WifiScreen::create(SensorSettings* sensorSettings, lv_obj_t* screen_)
 {
@@ -19,15 +20,20 @@ void WifiScreen::create(SensorSettings* sensorSettings, lv_obj_t* screen_)
     }
     lock();
     ui->mainContainer.create(screen, LV_PCT(100), LV_PCT(100), LV_FLEX_FLOW_COLUMN);
-    lv_obj_set_style_bg_color(ui->mainContainer.get(), lv_color_hex(0x222222), LV_PART_MAIN);
+    KitchenTheme::surface(ui->mainContainer.get());
+    lv_obj_clear_flag(ui->mainContainer.get(), LV_OBJ_FLAG_SCROLLABLE);
     ui->mainContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
     {
         /// Screen header.
         ui->header.create(ui->mainContainer.get());
         // if wifi get current == true
 
-        ui->contentContainer.create(ui->mainContainer.get(), LV_PCT(100), LV_PCT(91),
+        ui->contentContainer.create(ui->mainContainer.get(), LV_PCT(100), 372,
                                     LV_FLEX_FLOW_COLUMN);
+        lv_obj_set_flex_grow(ui->contentContainer.get(), 1);
+        lv_obj_set_style_pad_hor(ui->contentContainer.get(), 28, 0);
+        lv_obj_set_style_pad_bottom(ui->contentContainer.get(), 20, 0);
+        lv_obj_clear_flag(ui->contentContainer.get(), LV_OBJ_FLAG_SCROLLABLE);
         // contentContainer.padding(0, 0);
         ui->contentContainer.align(LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_START);
 
@@ -38,7 +44,7 @@ void WifiScreen::create(SensorSettings* sensorSettings, lv_obj_t* screen_)
         ui->menu.setSize(lv_pct(100), lv_pct(100));
 
         // Root page ((sidebar) left part on screen).
-        ui->menu.createRootPage("Settings");
+        ui->menu.createRootPage(nullptr);
         // menu.createRootPage(nullptr);
 
         /*********************
@@ -73,7 +79,7 @@ void WifiScreen::create(SensorSettings* sensorSettings, lv_obj_t* screen_)
 
         ui->menu.setSidebarPage(ui->menu.getRootPage());
         lv_obj_t* sidebar   = lv_menu_get_cur_sidebar_page(ui->menu.get());
-        lv_obj_t* firstItem = lv_obj_get_child(sidebar, 2);
+        lv_obj_t* firstItem = lv_obj_get_child(sidebar, 0);
         lv_event_send(firstItem, LV_EVENT_CLICKED, nullptr);
     }
 
@@ -98,50 +104,45 @@ void WifiScreen::keyboardEventCallback(lv_event_t* e)
     if ((code == LV_EVENT_READY || code == LV_EVENT_CANCEL) && (screen->keyboard))
     {
         screen->lock();
-        lv_obj_remove_event_cb(screen->keyboard, keyboardEventCallback);
-        lv_obj_del(screen->keyboard);
-        screen->keyboard = nullptr;
+        screen->hideKeyboard();
         screen->unlock();
     }
 }
 
+void WifiScreen::showKeyboard(lv_obj_t* textarea)
+{
+    if (!keyboard) {
+        keyboard = lv_keyboard_create(screen);
+        lv_obj_set_size(keyboard, LV_HOR_RES, LV_VER_RES / 2);
+        lv_obj_align(keyboard, LV_ALIGN_BOTTOM_MID, 0, 0);
+        lv_obj_add_event_cb(keyboard, keyboardEventCallback, LV_EVENT_ALL, nullptr);
+    }
+    settings_keyboard_layout(ui->contentContainer.get(), true);
+    lv_keyboard_set_textarea(keyboard, textarea);
+    lv_obj_update_layout(ui->mainContainer.get());
+    lv_obj_scroll_to_view_recursive(textarea, LV_ANIM_OFF);
+}
+
+void WifiScreen::hideKeyboard()
+{
+    if (keyboard) {
+        auto* oldKeyboard = keyboard;
+        keyboard = nullptr;
+        lv_obj_remove_event_cb(oldKeyboard, keyboardEventCallback);
+        lv_obj_del(oldKeyboard);
+    }
+    settings_keyboard_layout(ui->contentContainer.get(), false);
+}
+
 void WifiScreen::textareaEventCallback(lv_event_t* e)
 {
-    lv_event_code_t code           = lv_event_get_code(e);
-    WifiScreen*     screen         = &WifiScreen::instance();
-    bool            createKeyboard = true;
-    screen->lock();
-    if (lv_event_get_current_target(e) == screen->ui->locationConfigurationBlock.getCityTextarea())
-    {
-        createKeyboard = screen->ui->locationConfigurationBlock.textareaCallback(e);
-    }
-    if (((code == LV_EVENT_CLICKED) || (code == LV_EVENT_FOCUSED)) && (createKeyboard))
-    {
-        if (!screen->keyboard)
-        {
-            screen->keyboard = lv_keyboard_create(screen->screen);
-            lv_obj_set_size(screen->keyboard, LV_HOR_RES, LV_VER_RES / 2);
-            lv_obj_add_event_cb(screen->keyboard, keyboardEventCallback, LV_EVENT_ALL, nullptr);
-
-            if (lv_event_get_current_target(e) ==
-                screen->ui->locationConfigurationBlock.getCityTextarea())
-            {
-                lv_timer_create(
-                    [](lv_timer_t* t) {
-                        WifiScreen* screen = static_cast<WifiScreen*>(t->user_data);
-                        lv_obj_add_state(screen->ui->locationConfigurationBlock.getCityTextarea(),
-                                         LV_STATE_FOCUSED);
-                        // lv_event_send(screen->locationConfigurationBlock.getCityTextarea(),
-                        // LV_EVENT_FOCUSED, NULL);
-                        // lv_textarea_set_cursor_pos(screen->locationConfigurationBlock.getCityTextarea(),
-                        // LV_TEXTAREA_CURSOR_LAST);
-                        lv_timer_del(t);
-                    },
-                    0, screen);
-            }
-        }
-
-        lv_keyboard_set_textarea(screen->keyboard, lv_event_get_current_target(e));
-    }
-    screen->unlock();
+    const auto code = lv_event_get_code(e);
+    auto* self = &WifiScreen::instance();
+    self->lock();
+    bool open = true;
+    if (lv_event_get_current_target(e) == self->ui->locationConfigurationBlock.getCityTextarea())
+        open = self->ui->locationConfigurationBlock.textareaCallback(e);
+    if ((code == LV_EVENT_CLICKED || code == LV_EVENT_FOCUSED) && open)
+        self->showKeyboard(lv_event_get_current_target(e));
+    self->unlock();
 }

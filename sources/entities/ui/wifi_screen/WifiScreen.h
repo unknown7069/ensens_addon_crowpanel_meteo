@@ -74,6 +74,7 @@ public:
     void setSSID(char* newSSID, int8_t rssi)
     {
         ui->header.setSSID(newSSID);
+        ui->header.updateRSSI(rssi);
         wifiConnectionBlock->updateCurrentSSID(newSSID, rssi);
     }
 
@@ -83,6 +84,8 @@ public:
     }
     static void keyboardEventCallback(lv_event_t* e);
     static void textareaEventCallback(lv_event_t* e);
+    void showKeyboard(lv_obj_t* textarea);
+    void hideKeyboard();
 
     lv_obj_t* getAvailableWIFIList()
     {

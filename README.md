@@ -26,23 +26,51 @@
  3.Into VSCode:
  - click "Build, Flash and Monitor".
 
-### Quick build check from CLI
+### Build from CLI
 
 To verify that the project still builds without opening VSCode, run:
 
 ```powershell
-pwsh -ExecutionPolicy Bypass -File scripts/test_build.ps1
+powershell -ExecutionPolicy Bypass -File scripts/build.ps1
 ```
 
 Add `-Clean` if you need to start from a pristine `idf.py fullclean` before building.
 
 
-## Simplified dashboard
+## Warm Horizon dashboard
 
-The main dashboard shows a large clock and full date, current outside and inside
-temperatures, the next overnight low, and the following daytime high. Indoor
-sensor details and history remain on the Status tab; tap the inside temperature
-to open it. Configuration remains on the Settings tab.
+The 800 × 480 home screen uses warm ivory, charcoal text, terracotta accents,
+and a large 12-hour clock with AM/PM and a full weekday/date. Current outdoor
+temperature, weather conditions and feels-like temperature sit beside the clock.
+Indoor temperature and humidity sit below it.
+
+The lower band shows the next 24 hours as eight three-hour forecast samples,
+with day/night weather icons and a temperature trend. A divider and weekday
+mark the first sample after midnight. Past samples roll off as the clock
+advances. Times use the configured weather location's timezone; fractional-hour
+timezones retain the forecast's actual minutes. Temperatures, including
+feels-like and forecast values, follow the configured Celsius/Fahrenheit unit.
+
+Tap the indoor readings to open sensor details and today's history; use Home
+to return. The top-right gear opens the existing configuration screen; its
+back button returns to the clock. The Wi-Fi icon dims when disconnected.
+Missing forecasts show placeholders and "FORECAST UNAVAILABLE".
+
+Sensor details use six large cards for temperature, humidity, pressure, CO2,
+VOC and air quality, with a history sparkline for each. Settings uses the same
+ivory/oatmeal surfaces, charcoal text and terracotta highlights. Its sidebar
+contains Units, Date & time, Brightness, Location and Wi-Fi. Dropdown lists,
+calendar, switches, slider, network rows and the on-screen keyboard share the
+palette. Date & time scrolls to the calendar; Set time applies the time, while
+tapping a calendar day applies the date. When editing a city or Wi-Fi password,
+the settings pane shrinks to keep the active field above the keyboard.
+
+The approved mockup is in `design/mockups/04-warm-horizon-24h.png`. A render
+of the actual LVGL implementation with sample readings is in
+`design/implemented/warm-horizon-800x480.png`.
+Additional rendered examples are `warm-sensors.png` and `warm-settings-*.png`
+in that same folder. These use sample values; the settings previews share the
+firmware's view factories and palette, with hardware callbacks excluded.
 
 Forecast temperatures use the [OpenWeather 3-hour forecast](https://openweathermap.org/api/forecast5).
 The low is the coldest forecast point in the next 18:00-06:00 period, and the high
@@ -51,13 +79,54 @@ timezone. Before 06:00, the low covers the remaining current night and the high
 covers the coming day. These are estimates from three-hour samples. Missing
 forecast data shows `--`. All four temperatures follow the configured unit.
 
-Build with `powershell -ExecutionPolicy Bypass -File scripts/build.ps1`. To run
-the forecast boundary tests with a host C++ compiler:
+After building, connect the panel by USB and use VS Code's ESP-IDF flash/monitor
+action, or run this in an ESP-IDF terminal from the project directory (replace
+`COM5` with the panel's serial port):
+
+```powershell
+idf.py -p COM5 flash monitor
+```
+
+The application binary is `build/esp32_lvgl_ensens_crowpanel.bin`; standard
+ESP-IDF flashing also uses the generated bootloader and partition table.
+Exit the monitor with Ctrl+].
+
+For the first hardware check, verify the clock and current readings, all eight
+forecast columns and night icons, then open and return from sensor details and
+settings. Switching temperature units should refresh both current and forecast
+readings immediately. Hardware rendering and touch still need to be checked on
+the physical panel.
+
+Also check switching settings pages, opening dropdowns, manual brightness after
+turning automatic brightness off, scrolling to the calendar, and opening and
+closing the city/password keyboard. Saved units, location and Wi-Fi behavior use
+the existing settings handlers.
+
+To run the forecast boundary tests alone with a host C++ compiler:
 
 ```powershell
 g++ -std=c++17 -Isources tests/weather_forecast_test.cpp -o build/weather_forecast_test.exe
 ./build/weather_forecast_test.exe
 ```
+
+The desktop checks in `tests/preview` also exercise the real forecast JSON parser,
+render the actual LVGL view at 800 × 480, check all 1,440 clock minutes for
+overlap, and test unit conversion, missing data, midnight markers and navigation.
+With CMake, native GCC and Ninja available:
+
+```powershell
+cmake -S tests/preview -B build/preview -G Ninja -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
+cmake --build build/preview
+ctest --test-dir build/preview --output-on-failure
+```
+
+The layout test writes `dashboard.bmp`, `dashboard-night-fahrenheit.bmp`,
+`dashboard-unavailable.bmp`, `dashboard-sensors.bmp`, and `dashboard-settings-*.bmp`
+to `build/preview`. Settings checks cover all sidebar pages, dropdown popup
+colors, calendar scrolling, the keyboard and returning Home. This uses a stub only for ESP32
+allocation; rendering uses the project's managed LVGL 8.4 sources and the same
+view, icons and fonts as the firmware. It requires the managed dependencies to
+have been downloaded by an ESP-IDF build.
 
 # Indoor Screen for Meteo project
 

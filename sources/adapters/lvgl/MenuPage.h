@@ -19,12 +19,7 @@ public:
         page = menu->addPage(title);
         if (!page)
             return false;
-        section = lv_menu_section_create(page);
-
-        lv_obj_t* sep = lv_menu_separator_create(section);
-        lv_obj_set_style_bg_color(sep, lv_color_white(), 0);
-        lv_obj_set_style_bg_opa(sep, LV_OPA_100, 0);
-        lv_obj_set_height(sep, 1);
+        section = page;
 
         return section != nullptr;
     }
@@ -54,6 +49,7 @@ public:
         lv_obj_set_style_pad_row(item, 4, 0);
         lv_obj_set_style_pad_column(item, 8, 0);
         lv_obj_set_style_pad_all(item, 8, 0);
+        settings_sidebar_item_style(item);
 
         if (icon)
         {
@@ -65,7 +61,7 @@ public:
         {
             lv_obj_t* text = lv_label_create(item);
             lv_label_set_text(text, label);
-            lv_label_set_long_mode(text, LV_LABEL_LONG_SCROLL_CIRCULAR);
+            lv_label_set_long_mode(text, LV_LABEL_LONG_DOT);
             lv_obj_set_flex_grow(text, 1);
         }
 
