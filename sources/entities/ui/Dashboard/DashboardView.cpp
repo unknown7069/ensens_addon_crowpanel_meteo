@@ -178,26 +178,27 @@ void initDashboard(DashboardWidgets* w)
     lv_obj_set_pos(w->forecast_band, 0, 274);
     lv_obj_set_size(w->forecast_band, 800, 206);
     lv_obj_clear_flag(w->forecast_band, LV_OBJ_FLAG_SCROLLABLE);
-    w->forecast_heading_label = label(w->forecast_band, "NEXT 24 HOURS", &lv_font_montserrat_28, 28, 10, 744);
+    w->forecast_heading_label = label(w->forecast_band, "FORECAST UNAVAILABLE", &lv_font_montserrat_28, 28, 10, 744);
+    lv_obj_add_flag(w->forecast_heading_label, LV_OBJ_FLAG_HIDDEN);
     w->midnight_divider = lv_obj_create(w->forecast_band);
     flat(w->midnight_divider, Rule);
-    lv_obj_set_size(w->midnight_divider, 1, 140);
-    lv_obj_set_pos(w->midnight_divider, 500, 56);
+    lv_obj_set_size(w->midnight_divider, 1, 180);
+    lv_obj_set_pos(w->midnight_divider, 500, 16);
     lv_obj_add_flag(w->midnight_divider, LV_OBJ_FLAG_HIDDEN);
     for (size_t i = 0; i < WeatherForecast::DisplayPoints; ++i) {
         const int x = 24 + i * 94;
         auto& point = w->forecast_points[i];
-        point.time = label(w->forecast_band, "--", &lv_font_montserrat_22, x, 49, 94, LV_TEXT_ALIGN_CENTER);
-        point.day = label(w->forecast_band, "", &lv_font_montserrat_18, x, 76, 94, LV_TEXT_ALIGN_CENTER);
+        point.time = label(w->forecast_band, "--", &lv_font_montserrat_22, x, 16, 94, LV_TEXT_ALIGN_CENTER);
+        point.day = label(w->forecast_band, "", &lv_font_montserrat_18, x, 43, 94, LV_TEXT_ALIGN_CENTER);
         lv_obj_set_style_text_color(point.day, lv_color_hex(Muted), 0);
-        point.icon = weather_icon_create(w->forecast_band, 42, Oatmeal);
-        lv_obj_set_pos(point.icon, x + 26, 96);
+        point.icon = weather_icon_create(w->forecast_band, 56, Oatmeal);
+        lv_obj_set_pos(point.icon, x + 19, 68);
         point.temperature = label(w->forecast_band, "--°", &lv_font_montserrat_36, x, 163, 94, LV_TEXT_ALIGN_CENTER);
     }
     w->forecast_graph = lv_obj_create(w->forecast_band);
     lv_obj_remove_style_all(w->forecast_graph);
-    lv_obj_set_pos(w->forecast_graph, 0, 138);
-    lv_obj_set_size(w->forecast_graph, 800, 25);
+    lv_obj_set_pos(w->forecast_graph, 0, 126);
+    lv_obj_set_size(w->forecast_graph, 800, 37);
     lv_obj_clear_flag(w->forecast_graph, LV_OBJ_FLAG_SCROLLABLE | LV_OBJ_FLAG_CLICKABLE);
     lv_obj_add_event_cb(w->forecast_graph, drawForecast, LV_EVENT_DRAW_MAIN, w);
 }
@@ -260,8 +261,9 @@ void dashboard_view_update_forecast(DashboardWidgets* w, const WeatherForecast& 
     }
     const auto temperature = [fahrenheit](float c) { return fahrenheit ? c * 1.8f + 32.f : c; };
     char text[32];
-    lv_label_set_text(w->forecast_heading_label,
-                      minimum <= maximum ? "NEXT 24 HOURS" : "FORECAST UNAVAILABLE");
+    const bool available = minimum <= maximum;
+    if (available) lv_obj_add_flag(w->forecast_heading_label, LV_OBJ_FLAG_HIDDEN);
+    else lv_obj_clear_flag(w->forecast_heading_label, LV_OBJ_FLAG_HIDDEN);
 
     lv_obj_add_flag(w->midnight_divider, LV_OBJ_FLAG_HIDDEN);
     bool dayMarked = false;
@@ -269,6 +271,8 @@ void dashboard_view_update_forecast(DashboardWidgets* w, const WeatherForecast& 
     for (size_t i = 0; i < next.size(); ++i) {
         auto& ui = w->forecast_points[i];
         const auto& point = next[i];
+        if (available) lv_obj_clear_flag(ui.time, LV_OBJ_FLAG_HIDDEN);
+        else lv_obj_add_flag(ui.time, LV_OBJ_FLAG_HIDDEN);
         w->forecast_valid[i] = point.timestamp != 0;
         lv_label_set_text(ui.day, "");
         weather_icon_set(ui.icon, point.icon);
@@ -302,7 +306,7 @@ void dashboard_view_update_forecast(DashboardWidgets* w, const WeatherForecast& 
         lv_label_set_text(ui.temperature, text);
         w->forecast_curve[i].x = 71 + i * 94;
         w->forecast_curve[i].y = maximum > minimum ?
-            18 - static_cast<int>((point.temperature - minimum) / (maximum - minimum) * 12.f) : 12;
+            30 - static_cast<int>((point.temperature - minimum) / (maximum - minimum) * 24.f) : 18;
     }
     lv_obj_invalidate(w->forecast_graph);
 }
